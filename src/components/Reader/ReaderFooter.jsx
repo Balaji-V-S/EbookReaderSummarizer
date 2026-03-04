@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const ReaderFooter = ({
     showControls,
@@ -68,25 +68,43 @@ const ReaderFooter = ({
                             <Menu size={24} />
                         </button>
 
-                        <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            step="1"
-                            value={displayPercent}
-                            onPointerDown={() => setIsDragging(true)}
-                            onChange={(e) => {
-                                setIsDragging(true);
-                                setDragPercent(parseFloat(e.target.value));
-                            }}
-                            onPointerUp={handleRelease}
-                            onBlur={handleRelease}
-                            className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer outline-none"
-                            style={{
-                                background: `linear-gradient(to right, #ec4899 ${displayPercent}%, ${trackBg} ${displayPercent}%)`,
-                                accentColor: '#ec4899',
-                            }}
-                        />
+                        <div className="flex-1 flex items-center gap-2">
+                            <button
+                                onClick={() => onNavigate?.('prev')}
+                                className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                title="Previous Chapter"
+                            >
+                                <ChevronLeft size={20} />
+                            </button>
+
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                step="1"
+                                value={displayPercent}
+                                onPointerDown={() => setIsDragging(true)}
+                                onChange={(e) => {
+                                    setIsDragging(true);
+                                    setDragPercent(parseFloat(e.target.value));
+                                }}
+                                onPointerUp={handleRelease}
+                                onBlur={handleRelease}
+                                className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer outline-none"
+                                style={{
+                                    background: `linear-gradient(to right, #ec4899 ${displayPercent}%, ${trackBg} ${displayPercent}%)`,
+                                    accentColor: '#ec4899',
+                                }}
+                            />
+
+                            <button
+                                onClick={() => onNavigate?.('next')}
+                                className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                title="Next Chapter"
+                            >
+                                <ChevronRight size={20} />
+                            </button>
+                        </div>
 
                         <div className="text-sm font-medium w-10 text-right select-none flex-shrink-0">
                             {displayPercent}%

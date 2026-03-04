@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Sparkles, Clock, BookMarked, Bookmark, BookmarkPlus, Focus, List, Type, Settings } from 'lucide-react';
+import { ArrowLeft, Sparkles, Clock, BookMarked, Bookmark, BookmarkPlus, Focus, List, Type } from 'lucide-react';
 
 const ReaderHeader = ({
     theme,
@@ -101,10 +101,6 @@ const ReaderHeader = ({
                     title="Appearance Settings"
                 >
                     <Type size={20} />
-                </button>
-
-                <button onClick={() => setShowSettings(true)} className="p-2 flex-shrink-0 hover:opacity-70 rounded-full transition-colors">
-                    <Settings size={20} />
                 </button>
             </div>
         </header>

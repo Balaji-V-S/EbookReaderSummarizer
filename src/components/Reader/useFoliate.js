@@ -65,26 +65,70 @@ export const useFoliate = ({
         const initBook = async () => {
             try {
                 let fileToOpen = book.file;
+                
+                // Fallback: If it's stored in the new ArrayBuffer format but wasn't reconstructed upstream
+                if (book.fileData && book.fileData.buffer) {
+                    fileToOpen = new File([book.fileData.buffer], book.fileData.name || (book.title + '.epub'), { type: book.fileData.type });
+                }
+                
+                // On iOS standalone mode, Blob URLs in iframes can be flaky.
+                // We ensure we have a File/Blob with proper name and type.
                 if (!(fileToOpen instanceof Blob)) {
                     const format = book.format || 'epub';
                     const ext  = format === 'pdf' ? '.pdf' : '.epub';
                     const mime = format === 'pdf' ? 'application/pdf' : 'application/epub+zip';
                     fileToOpen = new File([fileToOpen], (book.title || 'book') + ext, { type: mime });
-                } else if (!fileToOpen.name) {
-                    const format = book.format || 'epub';
-                    const ext  = format === 'pdf' ? '.pdf' : '.epub';
-                    const mime = format === 'pdf' ? 'application/pdf' : 'application/epub+zip';
-                    fileToOpen = new File([fileToOpen], (book.title || 'book') + ext, { type: fileToOpen.type || mime });
                 }
 
+                // In iOS PWA, sometimes the file handle is lost. We try to read it now as a preemptive check.
+                console.log('Accessing book buffer for iOS stability...');
+                try {
+                    await fileToOpen.arrayBuffer();
+                } catch (readErr) {
+                    console.error('CRITICAL: Failed to read book buffer on iOS:', readErr);
+                    throw new Error('Could not access book data (Safari storage limit or stale handle)');
+                }
+
+                console.log('Opening book:', fileToOpen.name, 'size:', fileToOpen.size);
                 await view.open(fileToOpen);
-                await view.goTo(book.cfi || 0);
+
+                // --- PATCH FOR IOS STABILITY ---
+                // Delay section unloading to prevent "NotFoundError" on Safari/PWA 
+                // when images/resources are still being rendered while a section is revoked.
+                if (view.book?.sections) {
+                    console.log('Applying delayed-unload patch to sections');
+                    view.book.sections = view.book.sections.map(s => {
+                        const originalUnload = s.unload;
+                        return {
+                            ...s,
+                            unload: () => {
+                                console.log('Delaying section unload for iOS stability (15s)...');
+                                setTimeout(() => {
+                                    try { originalUnload(); } catch (e) { console.warn('Delayed unload failed:', e); }
+                                }, 15000); 
+                            }
+                        };
+                    });
+                    // Ensure renderer has the same patched section list
+                    if (view.renderer) view.renderer.sections = view.book.sections;
+                }
+                // -------------------------------
+
+                const startLocation = book.cfi || 0;
+                console.log('Reader goTo startLocation:', startLocation);
+                try {
+                    await view.goTo(startLocation);
+                } catch (goErr) {
+                    console.warn('Initial goTo failed, retrying at index 0:', goErr);
+                    await view.goTo(0);
+                }
+
                 const foliateBook = view.book;
                 if (foliateBook) setToc(foliateBook.toc || []);
                 setIsReady(true);
             } catch (err) {
-                console.error('Foliate load error', err);
-                setLoadError(err.message || String(err));
+                console.error('Foliate load error detail:', err);
+                setLoadError(`Reader Error: ${err.message || 'Could not open book'}. (Check console for details)`);
             }
         };
 
@@ -186,14 +230,23 @@ export const useFoliate = ({
             view.removeEventListener('load', handleLoad);
             try { view.close?.(); } catch (_) {}
         };
-    }, [book, flow]);
+    }, [book]); // <-- Flow removed from here to prevent full re-open on mode change
 
-    // Live style update when appearance settings change
+    // Live style + flow update when appearance/flow settings change
     useEffect(() => {
         const view = viewerRef.current;
         if (!view?.renderer?.setStyles) return;
+        
+        console.log('Applying live updates: theme, flow, max-width', theme, flow, maxWidth);
+        
+        // Update styles
         view.renderer.setStyles(buildReaderCSS(settings));
+        
+        // Update attributes on the renderer (paginator.js handles these dynamically)
         view.renderer.setAttribute('max-inline-size', maxWidth === '100%' ? '1200px' : maxWidth);
+        view.renderer.setAttribute('flow', flow);
+        
+        // Update theme color scheme
         view.style.setProperty('color-scheme', theme === 'dark' ? 'dark' : 'light');
-    }, [theme, fontSize, fontFamily, lineHeight, maxWidth]);
+    }, [theme, fontSize, fontFamily, lineHeight, maxWidth, flow]);
 };

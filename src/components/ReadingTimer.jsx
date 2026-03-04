@@ -13,6 +13,7 @@ const ReadingTimer = ({ book, onBack }) => {
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [newPage, setNewPage] = useState(book.currentPage || 0);
     const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState('');
 
     // Summarization States
     const [showSummary, setShowSummary] = useState(false);
@@ -54,13 +55,13 @@ const ReadingTimer = ({ book, onBack }) => {
     };
 
     const handleSaveSession = async () => {
-        if (newPage <= book.currentPage) {
-            alert("New page must be greater than your previous page.");
+        if (!newPage || parseInt(newPage) <= (book.currentPage || 0)) {
+            setSaveError(`Please enter a page number greater than ${book.currentPage || 0}.`);
             return;
         }
-
+        setSaveError('');
         setSaving(true);
-        const pagesRead = newPage - book.currentPage;
+        const pagesRead = parseInt(newPage) - (book.currentPage || 0);
         const durationMs = timeInSeconds * 1000;
 
         await updatePhysicalProgress(book.id, pagesRead, durationMs, parseInt(newPage));
@@ -212,12 +213,21 @@ const ReadingTimer = ({ book, onBack }) => {
                             </label>
                             <input
                                 type="number"
-                                min={book.currentPage || 0}
+                                min={(book.currentPage || 0) + 1}
                                 max={book.totalPages || 9999}
                                 value={newPage}
-                                onChange={(e) => setNewPage(e.target.value)}
-                                className="w-full px-4 py-3 text-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white mb-6"
+                                onChange={(e) => {
+                                    setNewPage(e.target.value);
+                                    setSaveError('');
+                                }}
+                                className="w-full px-4 py-3 text-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white mb-2"
                             />
+                            {saveError && (
+                                <p className="text-sm text-red-500 dark:text-red-400 mb-4 flex items-center gap-1">
+                                    <span>⚠</span> {saveError}
+                                </p>
+                            )}
+                            {!saveError && <div className="mb-6" />}
 
                             <div className="flex gap-3">
                                 <button
@@ -228,7 +238,7 @@ const ReadingTimer = ({ book, onBack }) => {
                                 </button>
                                 <button
                                     onClick={handleSaveSession}
-                                    disabled={saving || newPage <= book.currentPage}
+                                    disabled={saving || !newPage || parseInt(newPage) <= (book.currentPage || 0)}
                                     className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 shadow-lg shadow-blue-600/30"
                                 >
                                     {saving ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <><Save size={18} /> Save</>}

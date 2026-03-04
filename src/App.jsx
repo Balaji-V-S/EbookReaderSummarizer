@@ -3,11 +3,38 @@ import Library from './components/Library';
 import Reader from './components/Reader';
 import PdfViewer from './components/PdfViewer';
 import ReadingTimer from './components/ReadingTimer';
+import { getBook } from './utils/storage';
 import Dashboard from './components/Dashboard';
 
 function App() {
   const [currentBook, setCurrentBook] = useState(null);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleOpenBook = async (book) => {
+    setIsLoading(true);
+    try {
+      // Re-fetch to get fresh File/Blob handles for iOS PWA stability
+      const freshBook = await getBook(book.id);
+      const bookToOpen = freshBook || book;
+
+      // Reconstruct File from ArrayBuffer if stored in the new format
+      if (bookToOpen.fileData && bookToOpen.fileData.buffer) {
+        bookToOpen.file = new File(
+          [bookToOpen.fileData.buffer],
+          bookToOpen.fileData.name || (bookToOpen.title + (bookToOpen.format === 'pdf' ? '.pdf' : '.epub')),
+          { type: bookToOpen.fileData.type }
+        );
+      }
+
+      setCurrentBook(bookToOpen);
+    } catch (err) {
+      console.error('Failed to refresh book data:', err);
+      setCurrentBook(book);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const isFullScreen = (currentBook !== null) && !showDashboard;
 
@@ -42,7 +69,7 @@ function App() {
         )
       ) : (
         <Library
-          onOpenBook={(book) => setCurrentBook(book)}
+          onOpenBook={handleOpenBook}
           onOpenDashboard={() => setShowDashboard(true)}
         />
       )}

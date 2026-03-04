@@ -25,15 +25,20 @@ const PredictionPrompt = ({ isOpen, genre: initialGenre, onSubmit, onSkip, onGen
     }, [isOpen, initialGenre]);
 
     const isFiction = genre === 'fiction';
-    const needsGenre = genre === null;
+    const needsGenre = false; // Genre is now collected at Summarize time, not here
 
-    const question = isFiction
-        ? "What do you think happens next?"
-        : "What are you hoping to learn in this session?";
+    // Fallback question when genre hasn't been set yet
+    const question = genre === null
+        ? "What's one thing on your mind about this book?"
+        : isFiction
+            ? "What do you think happens next?"
+            : "What are you hoping to learn in this session?";
 
-    const placeholder = isFiction
-        ? "e.g. I think the detective will discover the real culprit is…"
-        : "e.g. I want to understand how compound interest actually works…";
+    const placeholder = genre === null
+        ? "e.g. I'm curious about where the story / argument is heading…"
+        : isFiction
+            ? "e.g. I think the detective will discover the real culprit is…"
+            : "e.g. I want to understand how compound interest actually works…";
 
     const handleSubmit = () => {
         if (!text.trim() || needsGenre) return;
@@ -51,7 +56,7 @@ const PredictionPrompt = ({ isOpen, genre: initialGenre, onSubmit, onSkip, onGen
                     exit={{ opacity: 0 }}
                     className="fixed inset-0 z-[90] flex items-end justify-center"
                     style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
-                    onClick={onSkip}
+                // Backdrop click intentionally does NOT skip — prevents accidental dismiss on Android
                 >
                     <motion.div
                         key="prediction-panel"
@@ -65,80 +70,50 @@ const PredictionPrompt = ({ isOpen, genre: initialGenre, onSubmit, onSkip, onGen
                         {/* Handle */}
                         <div className="w-10 h-1 bg-gray-600 rounded-full mx-auto mb-5" />
 
-                        {/* Genre selector — shown only on first encounter */}
-                        {needsGenre ? (
-                            <>
-                                <p className="text-center text-white font-semibold text-lg mb-1">What kind of book is this?</p>
-                                <p className="text-center text-gray-400 text-sm mb-6">This helps us ask the right questions.</p>
-                                <div className="flex gap-4">
-                                    <button
-                                        onClick={() => { setGenre('fiction'); onGenreSelect?.('fiction'); }}
-                                        className="flex-1 py-4 rounded-2xl bg-indigo-900/40 border border-indigo-700/50 text-indigo-300 font-medium hover:bg-indigo-900/60 transition-colors flex flex-col items-center gap-2"
-                                    >
-                                        <BookOpen size={24} />
-                                        <span>Fiction / Novel</span>
-                                        <span className="text-xs opacity-60">Story, characters, plot</span>
-                                    </button>
-                                    <button
-                                        onClick={() => { setGenre('nonfiction'); onGenreSelect?.('nonfiction'); }}
-                                        className="flex-1 py-4 rounded-2xl bg-emerald-900/40 border border-emerald-700/50 text-emerald-300 font-medium hover:bg-emerald-900/60 transition-colors flex flex-col items-center gap-2"
-                                    >
-                                        <Lightbulb size={24} />
-                                        <span>Non-Fiction</span>
-                                        <span className="text-xs opacity-60">Ideas, facts, knowledge</span>
-                                    </button>
+                        {/* Always go straight to the question — genre is set at Summarize time */}
+                        <>
+                            {/* Icon + question */}
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className={`p-2.5 rounded-xl ${isFiction ? 'bg-indigo-900/40' : genre === null ? 'bg-gray-700/40' : 'bg-emerald-900/40'}`}>
+                                    {isFiction
+                                        ? <BookOpen size={20} className="text-indigo-400" />
+                                        : <Lightbulb size={20} className={genre === null ? 'text-gray-400' : 'text-emerald-400'} />
+                                    }
                                 </div>
+                                <p className="text-white font-semibold text-base leading-snug">{question}</p>
+                            </div>
+
+                            {/* Input */}
+                            <textarea
+                                autoFocus
+                                rows={3}
+                                value={text}
+                                onChange={e => setText(e.target.value)}
+                                placeholder={placeholder}
+                                className="w-full rounded-2xl bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 text-sm px-4 py-3 resize-none outline-none focus:ring-2 focus:ring-indigo-500/40 transition-all"
+                            />
+
+                            {/* Actions */}
+                            <div className="flex gap-3 mt-4">
                                 <button
                                     onClick={onSkip}
-                                    className="w-full mt-4 py-2 text-sm text-gray-500 hover:text-gray-300 transition-colors"
+                                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-800 text-gray-400 text-sm hover:text-gray-200 transition-colors"
                                 >
-                                    Skip for now
+                                    <SkipForward size={15} /> Skip
                                 </button>
-                            </>
-                        ) : (
-                            <>
-                                {/* Icon + question */}
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className={`p-2.5 rounded-xl ${isFiction ? 'bg-indigo-900/40' : 'bg-emerald-900/40'}`}>
-                                        {isFiction
-                                            ? <BookOpen size={20} className="text-indigo-400" />
-                                            : <Lightbulb size={20} className="text-emerald-400" />
-                                        }
-                                    </div>
-                                    <p className="text-white font-semibold text-base leading-snug">{question}</p>
-                                </div>
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={!text.trim()}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${isFiction
+                                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-40'
+                                        : 'bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40'
+                                        }`}
+                                >
+                                    <Send size={15} /> Save my prediction
+                                </button>
+                            </div>
+                        </>
 
-                                {/* Input */}
-                                <textarea
-                                    autoFocus
-                                    rows={3}
-                                    value={text}
-                                    onChange={e => setText(e.target.value)}
-                                    placeholder={placeholder}
-                                    className="w-full rounded-2xl bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-500 text-sm px-4 py-3 resize-none outline-none focus:ring-2 focus:ring-indigo-500/40 transition-all"
-                                />
-
-                                {/* Actions */}
-                                <div className="flex gap-3 mt-4">
-                                    <button
-                                        onClick={onSkip}
-                                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-800 text-gray-400 text-sm hover:text-gray-200 transition-colors"
-                                    >
-                                        <SkipForward size={15} /> Skip
-                                    </button>
-                                    <button
-                                        onClick={handleSubmit}
-                                        disabled={!text.trim()}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${isFiction
-                                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-40'
-                                            : 'bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40'
-                                            }`}
-                                    >
-                                        <Send size={15} /> Save my prediction
-                                    </button>
-                                </div>
-                            </>
-                        )}
                     </motion.div>
                 </motion.div>
             )}

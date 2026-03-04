@@ -17,14 +17,17 @@ export const useRecallEngine = ({ book, location, viewerRef, setShowSettings }) 
     // Auto-trigger recall when the book is opened (new or lapsed reader)
     useEffect(() => {
         if (!book) return;
-        const apiKey = localStorage.getItem('gemini_api_key');
-        if (!apiKey) return;
 
         const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
         const isNewBook = !book.cfi && (!book.sessions || book.sessions.length === 0);
         const isLapsedReader = book.lastRead && (Date.now() - book.lastRead) > THREE_DAYS_MS && !isNewBook;
 
+        // Only trigger for new or lapsed readers
         if (!isNewBook && !isLapsedReader) return;
+
+        // Don't open the modal at all if no API key — silently skip
+        const apiKey = localStorage.getItem('gemini_api_key');
+        if (!apiKey) return;
 
         setIsOrientation(isNewBook);
         setShowRecall(true);

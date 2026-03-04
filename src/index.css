@@ -48,3 +48,17 @@ foliate-view::part(container) {
 foliate-view::part(container)::-webkit-scrollbar {
   display: none;
 }
+
+/* iOS PWA Fixes */
+.ios-pwa-reader {
+  touch-action: manipulation;
+  /* Allow pinch-to-zoom but handle taps faster */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Ensure overlays are clickable */
+.nav-overlay {
+  -webkit-tap-highlight-color: transparent;
+}

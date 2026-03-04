@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { generateSummary } from '../../utils/gemini';
-import { saveSummary } from '../../utils/storage';
+import { saveSummary, setBookGenre } from '../../utils/storage';
 
 /**
  * Generates and stores the AI chapter summary.
@@ -9,10 +9,29 @@ export const useSummary = ({ book, location, viewerRef, setShowSettings }) => {
     const [showSummary, setShowSummary] = useState(false);
     const [summaryLoading, setSummaryLoading] = useState(false);
     const [summaryText, setSummaryText] = useState('');
+    const [showGenrePicker, setShowGenrePicker] = useState(false);
 
     const handleSummarize = async () => {
         const apiKey = localStorage.getItem('gemini_api_key');
         if (!apiKey) { setShowSettings(true); return; }
+
+        // Genre gate — ask once before the first summary, then never again
+        if (!book.genre) { setShowGenrePicker(true); return; }
+
+        await _runSummary();
+    };
+
+    // Called when genre picker confirms a genre
+    const handleGenreConfirmed = async (genre) => {
+        await setBookGenre(book.id, genre);
+        book.genre = genre; // patch in-memory so _runSummary picks it up
+        setShowGenrePicker(false);
+        await _runSummary();
+    };
+
+    const _runSummary = async () => {
+        const apiKey = localStorage.getItem('gemini_api_key');
+        if (!apiKey) return; // safety guard
 
         setShowSummary(true);
         setSummaryLoading(true);
@@ -80,5 +99,10 @@ export const useSummary = ({ book, location, viewerRef, setShowSettings }) => {
         }
     };
 
-    return { showSummary, setShowSummary, summaryLoading, summaryText, handleSummarize };
+    return {
+        showSummary, setShowSummary,
+        summaryLoading, summaryText,
+        handleSummarize,
+        showGenrePicker, setShowGenrePicker, handleGenreConfirmed,
+    };
 };

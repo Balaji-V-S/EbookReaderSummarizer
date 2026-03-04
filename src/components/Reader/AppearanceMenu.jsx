@@ -8,7 +8,6 @@ const AppearanceMenu = ({
     update,
     fontSize,
     fontFamily,
-    maxWidth,
     lineHeight,
     flow
 }) => {
@@ -79,51 +78,26 @@ const AppearanceMenu = ({
                 </div>
             </div>
 
-            {/* Width & Line Height Sections */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-                <div>
-                    <label className="text-xs text-gray-500 mb-2 block">Max Width</label>
-                    <div className={`flex flex-col gap-1 p-1 rounded-lg ${theme === 'dark' ? 'bg-gray-900' : theme === 'sepia' ? 'bg-[#e3dccb]' : 'bg-gray-100'}`}>
-                        {[
-                            { label: 'Narrow', value: '600px' },
-                            { label: 'Standard', value: '800px' },
-                            { label: 'Wide', value: '1000px' },
-                            { label: 'Full', value: '100%' }
-                        ].map(w => (
-                            <button
-                                key={w.value}
-                                onClick={() => update('maxWidth', w.value)}
-                                className={`w-full py-1.5 rounded-md text-[11px] sm:text-xs transition-colors truncate px-1 ${maxWidth === w.value
-                                    ? (theme === 'dark' ? 'bg-gray-700 shadow-sm font-medium' : theme === 'sepia' ? 'bg-[#f4ecd8] shadow-sm font-medium' : 'bg-white shadow-sm font-medium')
-                                    : (theme === 'dark' ? 'hover:bg-gray-800' : theme === 'sepia' ? 'hover:bg-[#d6cebc]' : 'hover:bg-gray-200')
-                                    }`}
-                            >
-                                {w.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                <div>
-                    <label className="text-xs text-gray-500 mb-2 block">Line Height</label>
-                    <div className={`flex flex-col gap-1 p-1 rounded-lg h-full ${theme === 'dark' ? 'bg-gray-900' : theme === 'sepia' ? 'bg-[#e3dccb]' : 'bg-gray-100'}`}>
-                        {[
-                            { label: 'Compact', value: '1.4' },
-                            { label: 'Normal', value: '1.8' },
-                            { label: 'Loose', value: '2.2' }
-                        ].map(lh => (
-                            <button
-                                key={lh.value}
-                                onClick={() => update('lineHeight', lh.value)}
-                                className={`w-full py-1.5 rounded-md text-[11px] sm:text-xs transition-colors truncate px-1 flex-1 ${lineHeight === lh.value
-                                    ? (theme === 'dark' ? 'bg-gray-700 shadow-sm font-medium' : theme === 'sepia' ? 'bg-[#f4ecd8] shadow-sm font-medium' : 'bg-white shadow-sm font-medium')
-                                    : (theme === 'dark' ? 'hover:bg-gray-800' : theme === 'sepia' ? 'hover:bg-[#d6cebc]' : 'hover:bg-gray-200')
-                                    }`}
-                            >
-                                {lh.label}
-                            </button>
-                        ))}
-                        <div className="flex-1"></div>
-                    </div>
+            {/* Line Height */}
+            <div className="mb-4">
+                <label className="text-xs text-gray-500 mb-2 block">Line Height</label>
+                <div className={`flex gap-1 p-1 rounded-lg ${theme === 'dark' ? 'bg-gray-900' : theme === 'sepia' ? 'bg-[#e3dccb]' : 'bg-gray-100'}`}>
+                    {[
+                        { label: 'Compact', value: '1.4' },
+                        { label: 'Normal', value: '1.8' },
+                        { label: 'Loose', value: '2.2' }
+                    ].map(lh => (
+                        <button
+                            key={lh.value}
+                            onClick={() => update('lineHeight', lh.value)}
+                            className={`flex-1 py-1.5 rounded-md text-xs transition-colors px-1 ${lineHeight === lh.value
+                                ? (theme === 'dark' ? 'bg-gray-700 shadow-sm font-medium' : theme === 'sepia' ? 'bg-[#f4ecd8] shadow-sm font-medium' : 'bg-white shadow-sm font-medium')
+                                : (theme === 'dark' ? 'hover:bg-gray-800' : theme === 'sepia' ? 'hover:bg-[#d6cebc]' : 'hover:bg-gray-200')
+                                }`}
+                        >
+                            {lh.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 

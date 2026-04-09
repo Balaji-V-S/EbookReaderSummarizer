@@ -10,38 +10,24 @@ const buildReaderCSS = (s) => {
         sepia: { color: '#5b4636', background: '#f4ecd8' },
     };
     const t = THEMES[s.theme] || THEMES.light;
-    // Apply font-size to every text element — not just body.
-    // EPUB files often have their own px/em sizes on p, h1, etc. which are
-    // more specific than body % and therefore override it. This is why the
-    // font-size slider appeared to do nothing (same bug seen in many EPUB readers).
+    
+    // Proper readers (like Play Books/Epub.js) generally inject styling at a root
+    // level instead of aggressively targeting every tag, which breaks EPUB-specific
+    // layouts and rendering constraints.
     return `
         body {
             background: ${t.background} !important;
             color: ${t.color} !important;
             font-family: ${s.fontFamily} !important;
             line-height: ${s.lineHeight} !important;
-            margin: 0;
-        }
-        body, p, div, span, h1, h2, h3, h4, h5, h6,
-        li, blockquote, td, th, caption, pre, code, a {
             font-size: ${s.fontSize}% !important;
+            margin: 0;
+            padding: 0;
         }
-        p, li, blockquote, td, th {
-            color: ${t.color} !important;
-            font-family: ${s.fontFamily} !important;
-            line-height: ${s.lineHeight} !important;
-            background: transparent !important;
-        }
-        h1, h2, h3, h4, h5, h6 {
-            color: ${t.color} !important;
-            font-family: ${s.fontFamily} !important;
-            background: transparent !important;
-        }
-        a { color: inherit !important; background: transparent !important; }
-        div, span { color: ${t.color} !important; background: transparent !important; }
         ::selection { background: rgba(255,215,0,0.35) !important; }
     `;
 };
+
 
 
 /**
@@ -221,39 +207,6 @@ export const useFoliate = ({
                     return;
                 }
 
-                // Paginated tap navigation — left 30% goes back, right 30% goes forward.
-                const renderer = view.renderer;
-                let visibleX = ev.clientX;
-                let viewportWidth = view.getBoundingClientRect().width;
-
-                // Foliate's paginator container scrolls horizontally. 
-                // ev.clientX is absolute to the full expanded iframe.
-                // We subtract the current scroll offset (renderer.start) to find where the click
-                // landed on the physical screen. 
-                if (renderer && typeof renderer.start === 'number' && typeof renderer.size === 'number') {
-                    visibleX = ev.clientX - renderer.start;
-                    viewportWidth = renderer.size;
-                } else {
-                    // Fallback for simple contexts
-                    visibleX = ev.clientX % viewportWidth;
-                }
-
-                const relX = visibleX / viewportWidth;
-                const flow = settingsRef.current?.flow;
-
-                if (flow === 'paginated') {
-                    if (relX < 0.3) {
-                        view.prev();
-                        return;
-                    }
-                    if (relX > 0.7) {
-                        view.next();
-                        return;
-                    }
-                }
-
-                // Centre tap (or any tap in scroll mode) — toggle UI controls
-
                 setShowControls(prev => {
                     if (prev) {
                         setShowAppearance(false);
@@ -264,7 +217,6 @@ export const useFoliate = ({
                     return !prev;
                 });
             });
-
         };
 
         view.addEventListener('relocate', handleRelocate);

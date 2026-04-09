@@ -51,8 +51,8 @@ foliate-view::part(container)::-webkit-scrollbar {
 
 /* iOS PWA Fixes */
 .ios-pwa-reader {
-  touch-action: manipulation;
-  /* Allow pinch-to-zoom but handle taps faster */
+  /* Prevent vertical scrolling/bouncing, but allow horizontal gestures */
+  touch-action: pan-x pinch-zoom;
   -webkit-touch-callout: none;
 }
 

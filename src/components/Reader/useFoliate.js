@@ -202,6 +202,21 @@ export const useFoliate = ({
                 if (sel?.toString().trim().length > 0) return;
                 if (ev.target.closest('a') || ev.target.tagName.toLowerCase() === 'img') return;
 
+                // Native E-reader navigation zones: 
+                // Left 20% = Prev Page | Right 20% = Next Page | Middle 60% = Toggle Controls
+                if (settingsRef.current?.flow === 'paginated') {
+                    const x = ev.clientX;
+                    const width = doc.documentElement.clientWidth;
+                    if (x < width * 0.2) {
+                        view.prev();
+                        return;
+                    }
+                    if (x > width * 0.8) {
+                        view.next();
+                        return;
+                    }
+                }
+
                 if (isFocusModeRef.current) {
                     setShowFocusExit(prev => !prev);
                     return;

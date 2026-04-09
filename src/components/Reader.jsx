@@ -137,8 +137,7 @@ const Reader = ({ book, onBack }) => {
                     style={{ outline: 'none' }}
                 />
 
-
-
+                {/* Nav overlays removed: useFoliate handles edge-navigation natively via iframe clicks */}
             </div>
 
             <TocSidebar

@@ -223,13 +223,21 @@ export const useFoliate = ({
                     if (ev.target.closest('a') || ev.target.tagName.toLowerCase() === 'img') return;
 
                     if (settingsRef.current?.flow === 'paginated') {
-                        const x = ev.clientX;
+                        // Mathematically translate the iframe's infinite scroll space back to the physical screen
+                        let physicalX = ev.clientX;
+                        try {
+                            const iframe = view.renderer?.shadowRoot?.querySelector('iframe');
+                            if (iframe) {
+                                physicalX = ev.clientX + iframe.getBoundingClientRect().left;
+                            }
+                        } catch (e) {}
+
                         const screenWidth = window.innerWidth;
-                        if (x < screenWidth * 0.25) {
+                        if (physicalX < screenWidth * 0.25) {
                             view.prev();
                             return;
                         }
-                        if (x > screenWidth * 0.75) {
+                        if (physicalX > screenWidth * 0.75) {
                             view.next();
                             return;
                         }

@@ -119,7 +119,7 @@ const Reader = ({ book, onBack }) => {
                 flow={flow}
             />
 
-            <div className={`absolute bottom-0 left-0 right-0 ios-pwa-reader ${theme === 'dark' ? 'bg-gray-900' : theme === 'sepia' ? 'bg-[#f4ecd8]' : 'bg-gray-50'}`} style={{ top: 'var(--safe-pt)' }}>
+            <div className={`absolute bottom-0 left-0 right-0 overflow-hidden ios-pwa-reader ${theme === 'dark' ? 'bg-gray-900' : theme === 'sepia' ? 'bg-[#f4ecd8]' : 'bg-gray-50'}`} style={{ top: 'var(--safe-pt)' }}>
                 {loadError && (
                     <div className="absolute inset-x-4 top-20 z-[100] bg-red-100 dark:bg-red-900/50 rounded-xl p-4 text-red-900 dark:text-red-100 flex flex-col items-center justify-center text-center shadow-lg border border-red-200 dark:border-red-800">
                         <span className="font-bold text-lg mb-2">⚠ Error Loading Book</span>
@@ -139,18 +139,43 @@ const Reader = ({ book, onBack }) => {
 
                 {flow === 'paginated' && (
                     <div className="absolute inset-0 z-10 pointer-events-none">
+                        {/* Left nav zone — tap only, does NOT intercept drags/selection */}
                         <div
-                            className="absolute inset-y-0 left-0 w-20 pointer-events-auto cursor-pointer flex items-center justify-start pl-4 nav-overlay"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handlePrev();
+                            className="absolute inset-y-0 left-0 w-16 pointer-events-auto"
+                            style={{ cursor: 'pointer', userSelect: 'none' }}
+                            onPointerDown={(e) => {
+                                e.currentTarget._tapStart = { x: e.clientX, y: e.clientY, t: Date.now() };
+                            }}
+                            onPointerUp={(e) => {
+                                const s = e.currentTarget._tapStart;
+                                if (!s) return;
+                                const dx = Math.abs(e.clientX - s.x);
+                                const dy = Math.abs(e.clientY - s.y);
+                                const dt = Date.now() - s.t;
+                                // Only navigate on a clean short tap — ignore drags (for text selection)
+                                if (dt < 300 && dx < 10 && dy < 10) {
+                                    e.stopPropagation();
+                                    handlePrev();
+                                }
                             }}
                         />
+                        {/* Right nav zone */}
                         <div
-                            className="absolute inset-y-0 right-0 w-20 pointer-events-auto cursor-pointer flex items-center justify-end pr-4 nav-overlay"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleNext();
+                            className="absolute inset-y-0 right-0 w-16 pointer-events-auto"
+                            style={{ cursor: 'pointer', userSelect: 'none' }}
+                            onPointerDown={(e) => {
+                                e.currentTarget._tapStart = { x: e.clientX, y: e.clientY, t: Date.now() };
+                            }}
+                            onPointerUp={(e) => {
+                                const s = e.currentTarget._tapStart;
+                                if (!s) return;
+                                const dx = Math.abs(e.clientX - s.x);
+                                const dy = Math.abs(e.clientY - s.y);
+                                const dt = Date.now() - s.t;
+                                if (dt < 300 && dx < 10 && dy < 10) {
+                                    e.stopPropagation();
+                                    handleNext();
+                                }
                             }}
                         />
                     </div>

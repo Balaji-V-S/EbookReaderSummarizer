@@ -10,20 +10,18 @@ import ExplainModal from './ExplainModal';
 import SettingsModal from './SettingsModal';
 import DictionaryModal from './DictionaryModal';
 import NotesModal from './NotesModal';
-import PredictionPrompt from './PredictionPrompt';
-import ReflectionCard from './ReflectionCard';
 import FocusSetupModal from './FocusSetupModal';
+import EntryDrawer from './EntryDrawer';
 import ReaderHeader from './Reader/ReaderHeader';
 import AppearanceMenu from './Reader/AppearanceMenu';
 import TocSidebar from './Reader/TocSidebar';
 import ReaderFooter from './Reader/ReaderFooter';
 import SelectionMenu from './Reader/SelectionMenu';
-import { updatePredictionOutcome, savePrediction, setBookGenre, getHighlights, saveHighlight, deleteHighlight } from '../utils/storage';
+import { getHighlights, saveHighlight, deleteHighlight } from '../utils/storage';
 
 const Reader = ({ book, onBack }) => {
     const readerState = useReader({ book, onBack });
 
-    // Destructure everything needed from our custom hook
     const {
         viewerRef, location, isReady, showSummary, setShowSummary, showSettings, setShowSettings,
         showAppearance, setShowAppearance, showToc, setShowToc, showNotes, setShowNotes, showControls, setShowControls,
@@ -31,7 +29,6 @@ const Reader = ({ book, onBack }) => {
         showRecall, setShowRecall, recallText, recallLoading, recallError, recallLength, setRecallLength, isOrientation,
         selection, showDictionary, setShowDictionary, clearSelection,
         showExplain, setShowExplain, explainText, explainLoading, explainError, explainSaved,
-        showPrediction, setShowPrediction, showReflection, setShowReflection, sessionPrediction, setSessionPrediction, pendingBack, setPendingBack,
         showFocusSetup, setShowFocusSetup, isFocusMode, showFocusExit, focusGoal, focusTimeRemaining, showFocusCelebration,
         settings, update, theme, fontSize, fontFamily, lineHeight, maxWidth, flow,
         handleRecall, handleBack, handlePrev, handleNext, handleSummarize, handleHighlight, handleDictionary,
@@ -40,40 +37,37 @@ const Reader = ({ book, onBack }) => {
     } = readerState;
 
     const [bookmarks, setBookmarks] = useState([]);
-    // One-time toolbar hint
     const [showToolbarHint, setShowToolbarHint] = useState(false);
+    const [showEntryDrawer, setShowEntryDrawer] = useState(false);
     const toolbarHintShown = useRef(false);
 
-    // Keep bookmarks state fresh
+    const handleSaveToCommonplace = () => {
+        if (!selection?.word) return;
+        setShowEntryDrawer(true);
+    };
+
     useEffect(() => {
         if (book?.id) {
             getHighlights(book.id).then(h => {
-                // Bookmarks are highlights without a 'note'
                 setBookmarks(h.filter(x => !x.note));
             });
         }
-    }, [book?.id, showToc]); // Refresh when TOC opens (in case deleted there)
+    }, [book?.id, showToc]);
 
-    // Show a one-time hint that tapping hides/shows the toolbar
     useEffect(() => {
-        if (isReady && !toolbarHintShown.current) {
-            const alreadySeen = localStorage.getItem('reader_toolbar_hint_seen');
-            if (!alreadySeen) {
-                toolbarHintShown.current = true;
-                // Show hint after a short delay so user can see the book first
-                const t = setTimeout(() => {
-                    setShowToolbarHint(true);
-                    setTimeout(() => {
-                        setShowToolbarHint(false);
-                        localStorage.setItem('reader_toolbar_hint_seen', '1');
-                    }, 3500);
-                }, 1800);
-                return () => clearTimeout(t);
-            }
+        if (isReady && !toolbarHintShown.current && !localStorage.getItem('reader_toolbar_hint_seen')) {
+            toolbarHintShown.current = true;
+            const t = setTimeout(() => {
+                setShowToolbarHint(true);
+                setTimeout(() => {
+                    setShowToolbarHint(false);
+                    localStorage.setItem('reader_toolbar_hint_seen', '1');
+                }, 3500);
+            }, 1800);
+            return () => clearTimeout(t);
         }
     }, [isReady]);
 
-    // Check if the exact current CFI is bookmarked
     const currentCfi = location?.start?.cfi;
     const isBookmarked = currentCfi && bookmarks.some(b => b.cfiRange === currentCfi);
 
@@ -85,7 +79,6 @@ const Reader = ({ book, onBack }) => {
             setBookmarks(prev => prev.filter(b => b.cfiRange !== currentCfi));
         } else {
             const label = location?.start?.tocItem?.label || `Page ${location?.start?.displayed?.page || 'Unknown'}`;
-            // Use 'gray' color to distinguish from real highlights internally, empty note
             await saveHighlight(book.id, currentCfi, label, 'gray', '');
             setBookmarks(prev => [...prev, { cfiRange: currentCfi, text: label, color: 'gray', note: '', timestamp: Date.now() }]);
         }
@@ -93,7 +86,6 @@ const Reader = ({ book, onBack }) => {
 
     return (
         <div className={`flex-1 w-full flex flex-col relative overflow-hidden ${theme === 'dark' ? 'bg-gray-900 text-white' : theme === 'sepia' ? 'bg-[#f4ecd8] text-[#5b4636]' : 'bg-white text-gray-900'}`}>
-            {/* Extracted Top Toolbar & Appearance Menu */}
             <ReaderHeader
                 theme={theme}
                 showControls={showControls}
@@ -101,10 +93,7 @@ const Reader = ({ book, onBack }) => {
                 handleBack={handleBack}
                 bookTitle={book.title}
                 handleSummarize={handleSummarize}
-                onRecallClick={() => {
-                    setShowRecall(true);
-                    // Clear state before opening usually handled nicely by handleRecall
-                }}
+                onRecallClick={() => setShowRecall(true)}
                 setShowNotes={setShowNotes}
                 setShowFocusSetup={setShowFocusSetup}
                 showToc={showToc}
@@ -115,6 +104,8 @@ const Reader = ({ book, onBack }) => {
                 isBookmarked={isBookmarked}
                 onToggleBookmark={handleToggleBookmark}
             />
+
+            {/* ReaderTour removed — contextual hint below replaces it */}
 
             <AppearanceMenu
                 showAppearance={showAppearance}
@@ -128,7 +119,6 @@ const Reader = ({ book, onBack }) => {
                 flow={flow}
             />
 
-            {/* Reader Area */}
             <div className={`absolute bottom-0 left-0 right-0 ios-pwa-reader ${theme === 'dark' ? 'bg-gray-900' : theme === 'sepia' ? 'bg-[#f4ecd8]' : 'bg-gray-50'}`} style={{ top: 'var(--safe-pt)' }}>
                 {loadError && (
                     <div className="absolute inset-x-4 top-20 z-[100] bg-red-100 dark:bg-red-900/50 rounded-xl p-4 text-red-900 dark:text-red-100 flex flex-col items-center justify-center text-center shadow-lg border border-red-200 dark:border-red-800">
@@ -147,7 +137,6 @@ const Reader = ({ book, onBack }) => {
                     style={{ outline: 'none' }}
                 />
 
-                {/* Navigation Overlays - Forced to stay on top of foliage-view for IOS */}
                 {flow === 'paginated' && (
                     <div className="absolute inset-0 z-10 pointer-events-none">
                         <div
@@ -174,35 +163,27 @@ const Reader = ({ book, onBack }) => {
                 theme={theme}
                 toc={toc}
                 onNavigate={async (href) => {
-                    console.log('Reader navigating to:', href);
                     const v = viewerRef.current;
                     if (!v) return;
 
                     if (href === 'next') {
-                        console.log('Explicit Next Chapter trigger');
-                        // Use a small delay and then fallback to index navigation if needed
                         v.next();
                         return;
                     }
                     if (href === 'prev') {
-                        console.log('Explicit Prev Chapter trigger');
                         v.prev();
                         return;
                     }
 
                     try {
-                        // Small delay to ensure Sidebar closing doesn't interfere with iOS WebView focus/calc
                         await new Promise(r => setTimeout(r, 100));
                         await viewerRef.current.goTo(href);
                     } catch (err) {
-                        console.error('TOC Navigation failed, retrying base:', err);
-                        // Fallback: If it has a fragment, try navigating to the base file first
                         if (typeof href === 'string' && href.includes('#')) {
                             try {
                                 const base = href.split('#')[0];
                                 await viewerRef.current.goTo(base);
                             } catch (fallbackErr) {
-                                console.error('TOC Fallback failed:', fallbackErr);
                             }
                         }
                     }
@@ -213,7 +194,6 @@ const Reader = ({ book, onBack }) => {
                 viewerRef={viewerRef}
             />
 
-            {/* Bottom Toolbar / Progress */}
             <ReaderFooter
                 showControls={showControls}
                 isFocusMode={isFocusMode}
@@ -230,12 +210,10 @@ const Reader = ({ book, onBack }) => {
                         await new Promise(r => setTimeout(r, 60));
                         await v.goTo(href);
                     } catch (e) {
-                        console.warn('Progress navigation error:', e);
                     }
                 }}
             />
 
-            {/* Toolbar hint toast */}
             <AnimatePresence>
                 {showToolbarHint && (
                     <motion.div
@@ -252,13 +230,7 @@ const Reader = ({ book, onBack }) => {
 
             <RecallModal
                 isOpen={showRecall}
-                onClose={() => {
-                    setShowRecall(false);
-                    // After recall, wait a beat before suggesting a prediction — avoids double-interrupt
-                    if (!sessionPrediction) {
-                        setTimeout(() => setShowPrediction(true), 1500);
-                    }
-                }}
+                onClose={() => setShowRecall(false)}
                 onGenerate={(len) => handleRecall(len)}
                 recallText={recallText}
                 isLoading={recallLoading}
@@ -269,50 +241,6 @@ const Reader = ({ book, onBack }) => {
                     if (shouldFetch) handleRecall(len);
                 }}
                 error={recallError}
-            />
-
-            <PredictionPrompt
-                isOpen={showPrediction}
-                genre={book.genre ?? null}
-                onGenreSelect={async (genre) => {
-                    if (!book.genre) await setBookGenre(book.id, genre);
-                }}
-                onSubmit={async (text, genre) => {
-                    if (!book.genre) await setBookGenre(book.id, genre);
-                    const ts = Date.now();
-                    await savePrediction(book.id, text, genre);
-                    setSessionPrediction({ text, genre, timestamp: ts });
-                    setShowPrediction(false);
-                }}
-                onSkip={() => setShowPrediction(false)}
-            />
-
-            <ReflectionCard
-                isOpen={showReflection}
-                prediction={sessionPrediction}
-                bookTitle={book.title}
-                onOutcome={async (outcome) => {
-                    if (sessionPrediction) {
-                        await updatePredictionOutcome(book.id, sessionPrediction.timestamp, outcome);
-                    }
-                    setShowReflection(false);
-                    setSessionPrediction(null);
-                    onBack();
-                }}
-                onSkip={async () => {
-                    // Mark the prediction as skipped so it's not left dangling in the DB
-                    if (sessionPrediction) {
-                        await updatePredictionOutcome(book.id, sessionPrediction.timestamp, 'skipped');
-                    }
-                    setShowReflection(false);
-                    setPendingBack(false);
-                    onBack();
-                }}
-                onKeepReading={() => {
-                    // User wants to go back to reading — cancel the exit
-                    setShowReflection(false);
-                    setPendingBack(false);
-                }}
             />
 
             <FocusSetupModal isOpen={showFocusSetup} onClose={() => setShowFocusSetup(false)} onStart={handleStartFocus} />
@@ -344,7 +272,6 @@ const Reader = ({ book, onBack }) => {
                 )}
             </AnimatePresence>
 
-            {/* Genre Picker — shown first time Summarize is clicked if genre not set */}
             <AnimatePresence>
                 {showGenrePicker && (
                     <motion.div
@@ -437,9 +364,20 @@ const Reader = ({ book, onBack }) => {
                 selection={selection}
                 showDictionary={showDictionary}
                 handleHighlight={handleHighlight}
+                handleSaveToCommonplace={handleSaveToCommonplace}
                 handleExplain={handleExplain}
                 handleDictionary={handleDictionary}
                 clearSelection={clearSelection}
+            />
+
+            <EntryDrawer
+                isOpen={showEntryDrawer}
+                onClose={() => { setShowEntryDrawer(false); clearSelection(); }}
+                quote={selection?.word}
+                book={book}
+                chapter={location?.start?.tocItem?.label || ''}
+                cfi={location?.start?.cfi || null}
+                theme={theme}
             />
         </div>
     );

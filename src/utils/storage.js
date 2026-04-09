@@ -3,12 +3,23 @@ import { recordReadingDay } from './streaks';
 
 const DB_NAME = 'book-reader-db';
 const STORE_NAME = 'books';
+const CP_STORE = 'commonplace'; // Commonplace Book entries
 
 export const initDB = async () => {
-  return openDB(DB_NAME, 1, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+  return openDB(DB_NAME, 2, {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        }
+      }
+      if (oldVersion < 2) {
+        // New Commonplace Book store — each entry is a standalone idea/highlight
+        if (!db.objectStoreNames.contains(CP_STORE)) {
+          const store = db.createObjectStore(CP_STORE, { keyPath: 'id', autoIncrement: true });
+          store.createIndex('bookId', 'bookId', { unique: false });
+          store.createIndex('timestamp', 'timestamp', { unique: false });
+        }
       }
     },
   });
@@ -185,3 +196,52 @@ export const deletePrediction = async (bookId, timestamp) => {
     await db.put(STORE_NAME, book);
   }
 };
+
+// ── Commonplace Book ──────────────────────────────────────────────────────────
+// Each Entry: { id (auto), bookId, bookTitle, bookAuthor, quote, myNote, tags[], chapter, cfi, timestamp }
+
+/**
+ * Save a new Commonplace Book entry.
+ * bookTitle + bookAuthor are stored inline so entries survive book deletion.
+ */
+export const saveEntry = async ({ bookId, bookTitle, bookAuthor, quote, myNote = '', tags = [], chapter = '', cfi = null }) => {
+  const db = await initDB();
+  return db.add(CP_STORE, {
+    bookId,
+    bookTitle: bookTitle || 'Unknown Book',
+    bookAuthor: bookAuthor || 'Unknown Author',
+    quote,
+    myNote,
+    tags,
+    chapter,
+    cfi,
+    timestamp: Date.now(),
+  });
+};
+
+/** Get ALL entries across all books, newest first. */
+export const getAllEntries = async () => {
+  const db = await initDB();
+  const all = await db.getAll(CP_STORE);
+  return all.sort((a, b) => b.timestamp - a.timestamp);
+};
+
+/** Get entries for a specific book. */
+export const getEntriesByBook = async (bookId) => {
+  const db = await initDB();
+  const all = await db.getAllFromIndex(CP_STORE, 'bookId', bookId);
+  return all.sort((a, b) => b.timestamp - a.timestamp);
+};
+
+/** Update an entry (e.g. after editing myNote or tags). */
+export const updateEntry = async (entry) => {
+  const db = await initDB();
+  return db.put(CP_STORE, entry);
+};
+
+/** Delete an entry by its auto-incremented id. */
+export const deleteEntry = async (id) => {
+  const db = await initDB();
+  return db.delete(CP_STORE, id);
+};
+

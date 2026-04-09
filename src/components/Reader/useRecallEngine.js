@@ -14,46 +14,10 @@ export const useRecallEngine = ({ book, location, viewerRef, setShowSettings }) 
     const recallContextRef = useRef(null);
     const wasAutoRecallRef = useRef(false);
 
-    // Auto-trigger recall when the book is opened (new or lapsed reader)
-    useEffect(() => {
-        if (!book) return;
 
-        const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
-        const isNewBook = !book.cfi && (!book.sessions || book.sessions.length === 0);
-        const isLapsedReader = book.lastRead && (Date.now() - book.lastRead) > THREE_DAYS_MS && !isNewBook;
-
-        // Only trigger for new or lapsed readers
-        if (!isNewBook && !isLapsedReader) return;
-
-        // Don't open the modal at all if no API key — silently skip
-        const apiKey = localStorage.getItem('gemini_api_key');
-        if (!apiKey) return;
-
-        setIsOrientation(isNewBook);
-        setShowRecall(true);
-        setRecallLoading(true);
-        wasAutoRecallRef.current = !isNewBook;
-        setRecallError(null);
-        setRecallText('');
-
-        const metadata = {
-            title: book.title || 'this book',
-            author: book.author || 'Unknown Author',
-            chapterName: null,
-            progress: 0,
-            previousChapters: [],
-            anchors: {},
-        };
-
-        const fetchData = isNewBook
-            ? generateOrientation(metadata, apiKey)
-            : generateRecall(metadata, apiKey, 'standard');
-
-        fetchData
-            .then(text => { setRecallText(text); recallContextRef.current = metadata; })
-            .catch(err => setRecallError(err.message || 'Could not generate recall.'))
-            .finally(() => setRecallLoading(false));
-    }, [book?.id]);
+    // NOTE: Auto-recall on book open has been removed.
+    // Recall is now 100% manual — the reader taps "Recall" when they want
+    // to reconnect with the book, not on every open after 3 days.
 
     const handleRecall = async (length = recallLength) => {
         const apiKey = localStorage.getItem('gemini_api_key');

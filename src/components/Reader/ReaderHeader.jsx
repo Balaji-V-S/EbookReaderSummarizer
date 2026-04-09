@@ -39,6 +39,7 @@ const ReaderHeader = ({
 
             <div className="flex items-center gap-1 md:gap-2">
                 <button
+                    id="tour-summarize"
                     onClick={handleSummarize}
                     className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors mr-0.5 sm:mr-1 ${theme === 'dark' ? 'bg-purple-900/30 text-purple-300 hover:bg-purple-900/50' :
                         'bg-purple-100 text-purple-700 hover:bg-purple-200'
@@ -49,6 +50,7 @@ const ReaderHeader = ({
                 </button>
 
                 <button
+                    id="tour-recall"
                     onClick={onRecallClick}
                     title="Recall — get caught up on what's happened so far"
                     className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors mr-0.5 sm:mr-2 ${theme === 'dark' ? 'bg-indigo-900/30 text-indigo-300 hover:bg-indigo-900/50' :
@@ -71,6 +73,7 @@ const ReaderHeader = ({
                 </button>
 
                 <button
+                    id="tour-notes"
                     onClick={() => setShowNotes(true)}
                     className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors mr-0.5 sm:mr-2 ${theme === 'dark' ? 'bg-blue-900/30 text-blue-300 hover:bg-blue-900/50' :
                         'bg-blue-100 text-blue-700 hover:bg-blue-200'
@@ -81,6 +84,7 @@ const ReaderHeader = ({
                 </button>
 
                 <button
+                    id="tour-focus"
                     onClick={() => setShowFocusSetup(true)}
                     className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors mr-0.5 sm:mr-2 ${theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 hover:bg-emerald-900/50' :
                         'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'

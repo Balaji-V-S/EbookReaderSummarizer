@@ -5,10 +5,14 @@ import PdfViewer from './components/PdfViewer';
 import ReadingTimer from './components/ReadingTimer';
 import { getBook } from './utils/storage';
 import Dashboard from './components/Dashboard';
+import CommonplaceBook from './components/CommonplaceBook';
+import KnowledgeBase from './components/KnowledgeBase';
 
 function App() {
   const [currentBook, setCurrentBook] = useState(null);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showCommonplace, setShowCommonplace] = useState(false);
+  const [showKnowledgeBase, setShowKnowledgeBase] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleOpenBook = async (book) => {
@@ -36,7 +40,7 @@ function App() {
     }
   };
 
-  const isFullScreen = (currentBook !== null) && !showDashboard;
+  const isFullScreen = (currentBook !== null) && !showDashboard && !showCommonplace && !showKnowledgeBase;
 
   return (
     <div
@@ -50,6 +54,10 @@ function App() {
     >
       {showDashboard ? (
         <Dashboard onBack={() => setShowDashboard(false)} />
+      ) : showCommonplace ? (
+        <CommonplaceBook onBack={() => setShowCommonplace(false)} />
+      ) : showKnowledgeBase ? (
+        <KnowledgeBase onBack={() => setShowKnowledgeBase(false)} />
       ) : currentBook ? (
         currentBook.type === 'physical' ? (
           <ReadingTimer
@@ -71,6 +79,8 @@ function App() {
         <Library
           onOpenBook={handleOpenBook}
           onOpenDashboard={() => setShowDashboard(true)}
+          onOpenCommonplace={() => setShowCommonplace(true)}
+          onOpenKnowledgeBase={() => setShowKnowledgeBase(true)}
         />
       )}
     </div>

@@ -61,6 +61,7 @@ const ReaderFooter = ({
                     {/* Bottom row: Menu, Slider, % */}
                     <div className="flex items-center gap-4 w-full">
                         <button
+                            id="tour-toc"
                             onClick={onMenuClick}
                             className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex-shrink-0"
                             aria-label="Table of Contents"

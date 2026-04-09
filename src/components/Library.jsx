@@ -2,11 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import ePub from 'epubjs';
 import { saveBook, getBooks, deleteBook } from '../utils/storage';
 import { getStreakData } from '../utils/streaks';
-import { Book, Plus, Trash2, BookPlus, Flame, BarChart2, Settings, Key, X } from 'lucide-react';
+import { Book, Plus, Trash2, BookPlus, Flame, BarChart2, Settings, Key, X, BookMarked, Brain } from 'lucide-react';
 import AddPhysicalBook from './AddPhysicalBook';
 import SettingsModal from './SettingsModal';
+import ProductTour from './ProductTour';
 
-const Library = ({ onOpenBook, onOpenDashboard }) => {
+const Library = ({ onOpenBook, onOpenDashboard, onOpenCommonplace, onOpenKnowledgeBase }) => {
+
+
     const [books, setBooks] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
     const [showAddPhysical, setShowAddPhysical] = useState(false);
@@ -14,6 +17,8 @@ const Library = ({ onOpenBook, onOpenDashboard }) => {
     const [streakData, setStreakData] = useState({ currentStreak: 0, maxStreak: 0, readToday: false });
     const [hasApiKey, setHasApiKey] = useState(() => !!localStorage.getItem('gemini_api_key'));
     const [dismissedBanner, setDismissedBanner] = useState(() => !!localStorage.getItem('api_banner_dismissed'));
+    const [showTour, setShowTour] = useState(false); // Disabled: onboarding tours removed for focus
+
     // Track which card has delete revealed (touch-friendly long-press or tap-icon)
     const [revealedDeleteId, setRevealedDeleteId] = useState(null);
     const longPressTimer = useRef(null);
@@ -130,6 +135,7 @@ const Library = ({ onOpenBook, onOpenDashboard }) => {
                 <div className="flex items-center gap-3 sm:gap-4">
                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">My Library</h1>
                     <button
+                        id="streak-btn"
                         onClick={onOpenDashboard}
                         className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 dark:bg-orange-950/30 rounded-full border border-orange-200 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors cursor-pointer group"
                         title={`Max Streak: ${streakData.maxStreak} days. Click to view full Dashboard.`}
@@ -143,17 +149,39 @@ const Library = ({ onOpenBook, onOpenDashboard }) => {
                         </span>
                         <BarChart2 size={16} className="text-gray-400 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </button>
+                    {onOpenCommonplace && (
+                        <button
+                            onClick={onOpenCommonplace}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/30 rounded-full border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors cursor-pointer"
+                            title="Open Commonplace Book"
+                        >
+                            <BookMarked size={18} className="text-amber-500" />
+                            <span className="font-semibold text-sm text-amber-700 dark:text-amber-300 hidden sm:inline">Commonplace</span>
+                        </button>
+                    )}
+                    {onOpenKnowledgeBase && (
+                        <button
+                            onClick={onOpenKnowledgeBase}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-violet-50 dark:bg-violet-950/30 rounded-full border border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-900/50 transition-colors cursor-pointer"
+                            title="Open Knowledge Base"
+                        >
+                            <Brain size={18} className="text-violet-500" />
+                            <span className="font-semibold text-sm text-violet-700 dark:text-violet-300 hidden sm:inline">Ask</span>
+                        </button>
+                    )}
                 </div>
+
 
                 <div className="flex items-center gap-3 sm:ml-auto">
                     <button
+                        id="physical-btn"
                         onClick={() => setShowAddPhysical(true)}
                         className="flex items-center gap-2 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-medium"
                     >
                         <BookPlus size={18} />
                         <span>Physical</span>
                     </button>
-                    <label className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors shadow-sm text-sm font-medium">
+                    <label id="upload-btn" className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors shadow-sm text-sm font-medium">
                         <Plus size={18} />
                         <span>Upload</span>
                         <input
@@ -165,6 +193,7 @@ const Library = ({ onOpenBook, onOpenDashboard }) => {
                         />
                     </label>
                     <button
+                        id="settings-btn"
                         onClick={() => setShowSettings(true)}
                         className={`p-2 rounded-full transition-colors ${hasApiKey
                             ? 'text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800'
@@ -299,6 +328,14 @@ const Library = ({ onOpenBook, onOpenDashboard }) => {
                     const key = localStorage.getItem('gemini_api_key');
                     setHasApiKey(!!key);
                     if (key) setDismissedBanner(true);
+                }}
+            />
+
+            <ProductTour
+                run={showTour}
+                onComplete={() => {
+                    localStorage.setItem('has_seen_interactive_tour', 'true');
+                    setShowTour(false);
                 }}
             />
         </>

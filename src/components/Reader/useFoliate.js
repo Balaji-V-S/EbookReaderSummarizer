@@ -10,23 +10,37 @@ const buildReaderCSS = (s) => {
         sepia: { color: '#5b4636', background: '#f4ecd8' },
     };
     const t = THEMES[s.theme] || THEMES.light;
+    // Apply font-size to every text element — not just body.
+    // EPUB files often have their own px/em sizes on p, h1, etc. which are
+    // more specific than body % and therefore override it. This is why the
+    // font-size slider appeared to do nothing (same bug seen in many EPUB readers).
     return `
         body {
             background: ${t.background} !important;
             color: ${t.color} !important;
             font-family: ${s.fontFamily} !important;
             line-height: ${s.lineHeight} !important;
-            font-size: ${s.fontSize}% !important;
             padding: 0 10px !important;
             margin: 0;
         }
-        p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, a {
+        body, p, div, span, h1, h2, h3, h4, h5, h6,
+        li, blockquote, td, th, caption, pre, code, a {
+            font-size: ${s.fontSize}% !important;
+        }
+        p, li, blockquote, td, th {
             color: ${t.color} !important;
             font-family: ${s.fontFamily} !important;
             line-height: ${s.lineHeight} !important;
             background: transparent !important;
         }
-        ::selection { background: rgba(255,255,0,0.3) !important; }
+        h1, h2, h3, h4, h5, h6 {
+            color: ${t.color} !important;
+            font-family: ${s.fontFamily} !important;
+            background: transparent !important;
+        }
+        a { color: inherit !important; background: transparent !important; }
+        div, span { color: ${t.color} !important; background: transparent !important; }
+        ::selection { background: rgba(255,215,0,0.35) !important; }
     `;
 };
 

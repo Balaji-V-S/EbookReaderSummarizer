@@ -15,16 +15,12 @@ const buildReaderCSS = (s) => {
     // more specific than body % and therefore override it. This is why the
     // font-size slider appeared to do nothing (same bug seen in many EPUB readers).
     return `
-        html {
-            overflow: hidden !important;
-        }
         body {
             background: ${t.background} !important;
             color: ${t.color} !important;
             font-family: ${s.fontFamily} !important;
             line-height: ${s.lineHeight} !important;
             margin: 0;
-            overflow: hidden !important;
         }
         body, p, div, span, h1, h2, h3, h4, h5, h6,
         li, blockquote, td, th, caption, pre, code, a {
@@ -45,8 +41,8 @@ const buildReaderCSS = (s) => {
         div, span { color: ${t.color} !important; background: transparent !important; }
         ::selection { background: rgba(255,215,0,0.35) !important; }
     `;
-
 };
+
 
 /**
  * Manages the Foliate viewer lifecycle: open, relocate, load-with-styles, annotations.

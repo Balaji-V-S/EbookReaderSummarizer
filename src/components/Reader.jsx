@@ -119,7 +119,7 @@ const Reader = ({ book, onBack }) => {
                 flow={flow}
             />
 
-            <div className={`absolute bottom-0 left-0 right-0 overflow-hidden ios-pwa-reader ${theme === 'dark' ? 'bg-gray-900' : theme === 'sepia' ? 'bg-[#f4ecd8]' : 'bg-gray-50'}`} style={{ top: 'var(--safe-pt)' }}>
+            <div className={`absolute bottom-0 left-0 right-0 ios-pwa-reader ${theme === 'dark' ? 'bg-gray-900' : theme === 'sepia' ? 'bg-[#f4ecd8]' : 'bg-gray-50'}`} style={{ top: 'var(--safe-pt)' }}>
                 {loadError && (
                     <div className="absolute inset-x-4 top-20 z-[100] bg-red-100 dark:bg-red-900/50 rounded-xl p-4 text-red-900 dark:text-red-100 flex flex-col items-center justify-center text-center shadow-lg border border-red-200 dark:border-red-800">
                         <span className="font-bold text-lg mb-2">⚠ Error Loading Book</span>

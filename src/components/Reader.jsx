@@ -137,49 +137,8 @@ const Reader = ({ book, onBack }) => {
                     style={{ outline: 'none' }}
                 />
 
-                {flow === 'paginated' && (
-                    <div className="absolute inset-0 z-10 pointer-events-none">
-                        {/* Left nav zone — tap only, does NOT intercept drags/selection */}
-                        <div
-                            className="absolute inset-y-0 left-0 w-16 pointer-events-auto"
-                            style={{ cursor: 'pointer', userSelect: 'none' }}
-                            onPointerDown={(e) => {
-                                e.currentTarget._tapStart = { x: e.clientX, y: e.clientY, t: Date.now() };
-                            }}
-                            onPointerUp={(e) => {
-                                const s = e.currentTarget._tapStart;
-                                if (!s) return;
-                                const dx = Math.abs(e.clientX - s.x);
-                                const dy = Math.abs(e.clientY - s.y);
-                                const dt = Date.now() - s.t;
-                                // Only navigate on a clean short tap — ignore drags (for text selection)
-                                if (dt < 300 && dx < 10 && dy < 10) {
-                                    e.stopPropagation();
-                                    handlePrev();
-                                }
-                            }}
-                        />
-                        {/* Right nav zone */}
-                        <div
-                            className="absolute inset-y-0 right-0 w-16 pointer-events-auto"
-                            style={{ cursor: 'pointer', userSelect: 'none' }}
-                            onPointerDown={(e) => {
-                                e.currentTarget._tapStart = { x: e.clientX, y: e.clientY, t: Date.now() };
-                            }}
-                            onPointerUp={(e) => {
-                                const s = e.currentTarget._tapStart;
-                                if (!s) return;
-                                const dx = Math.abs(e.clientX - s.x);
-                                const dy = Math.abs(e.clientY - s.y);
-                                const dt = Date.now() - s.t;
-                                if (dt < 300 && dx < 10 && dy < 10) {
-                                    e.stopPropagation();
-                                    handleNext();
-                                }
-                            }}
-                        />
-                    </div>
-                )}
+
+
             </div>
 
             <TocSidebar

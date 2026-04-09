@@ -221,6 +221,25 @@ export const useFoliate = ({
                     return;
                 }
 
+                // Paginated tap navigation — left 30% goes back, right 30% goes forward.
+                // Centre 40% toggles controls. This mirrors the foliate reference reader approach
+                // and is the only way to navigate without blocking text selection.
+                const rect = view.getBoundingClientRect();
+                const relX = (ev.clientX - rect.left) / rect.width;
+                const flow = settingsRef.current?.flow;
+
+                if (flow === 'paginated') {
+                    if (relX < 0.3) {
+                        view.prev();
+                        return;
+                    }
+                    if (relX > 0.7) {
+                        view.next();
+                        return;
+                    }
+                }
+
+                // Centre tap — toggle UI controls
                 setShowControls(prev => {
                     if (prev) {
                         setShowAppearance(false);
@@ -231,6 +250,7 @@ export const useFoliate = ({
                     return !prev;
                 });
             });
+
         };
 
         view.addEventListener('relocate', handleRelocate);

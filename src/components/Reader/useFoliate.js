@@ -197,40 +197,59 @@ export const useFoliate = ({
                 }
             });
 
-            doc.addEventListener('click', (ev) => {
-                const sel = doc.getSelection();
-                if (sel?.toString().trim().length > 0) return;
-                if (ev.target.closest('a') || ev.target.tagName.toLowerCase() === 'img') return;
+            let tapStartX = null;
+            let tapStartY = null;
+            let tapStartTime = 0;
 
-                // Native E-reader navigation zones: 
-                // Left 20% = Prev Page | Right 20% = Next Page | Middle 60% = Toggle Controls
-                if (settingsRef.current?.flow === 'paginated') {
-                    const x = ev.clientX;
-                    const screenWidth = window.innerWidth;
-                    if (x < screenWidth * 0.2) {
-                        view.prev();
+            doc.addEventListener('pointerdown', (ev) => {
+                tapStartX = ev.clientX;
+                tapStartY = ev.clientY;
+                tapStartTime = Date.now();
+            }, { passive: true });
+
+            doc.addEventListener('pointerup', (ev) => {
+                if (tapStartX === null) return;
+                
+                const dx = Math.abs(ev.clientX - tapStartX);
+                const dy = Math.abs(ev.clientY - tapStartY);
+                const dt = Date.now() - tapStartTime;
+                
+                tapStartX = null; // Reset
+
+                // Proceed only if it's a clean, short tap (avoids interfering with text drag/selection)
+                if (dx < 10 && dy < 10 && dt < 400) {
+                    const sel = doc.getSelection();
+                    if (sel?.toString().trim().length > 0) return;
+                    if (ev.target.closest('a') || ev.target.tagName.toLowerCase() === 'img') return;
+
+                    if (settingsRef.current?.flow === 'paginated') {
+                        const x = ev.clientX;
+                        const screenWidth = window.innerWidth;
+                        if (x < screenWidth * 0.25) {
+                            view.prev();
+                            return;
+                        }
+                        if (x > screenWidth * 0.75) {
+                            view.next();
+                            return;
+                        }
+                    }
+
+                    if (isFocusModeRef.current) {
+                        setShowFocusExit(prev => !prev);
                         return;
                     }
-                    if (x > screenWidth * 0.8) {
-                        view.next();
-                        return;
-                    }
-                }
 
-                if (isFocusModeRef.current) {
-                    setShowFocusExit(prev => !prev);
-                    return;
+                    setShowControls(prev => {
+                        if (prev) {
+                            setShowAppearance(false);
+                            setShowToc(false);
+                            setShowSettings(false);
+                            setShowNotes(false);
+                        }
+                        return !prev;
+                    });
                 }
-
-                setShowControls(prev => {
-                    if (prev) {
-                        setShowAppearance(false);
-                        setShowToc(false);
-                        setShowSettings(false);
-                        setShowNotes(false);
-                    }
-                    return !prev;
-                });
             });
         };
 

@@ -222,15 +222,23 @@ export const useFoliate = ({
                 }
 
                 // Paginated tap navigation — left 30% goes back, right 30% goes forward.
-                // IMPORTANT: In foliate, the iframe renders all chapters as a single long 
-                // horizontally scattered series of columns. ev.clientX gives the absolute X 
-                // coordinate within the *entire* iframe (e.g. 5200px), not the visible screen.
-                // However, since the container scrolls perfectly by increments of rect.width,
-                // we can just use modulo to get the exact X position on the visible screen.
-                const rect = view.getBoundingClientRect();
-                const screenX = ev.clientX % rect.width;
-                const relX = screenX / rect.width;
-                
+                const renderer = view.renderer;
+                let visibleX = ev.clientX;
+                let viewportWidth = view.getBoundingClientRect().width;
+
+                // Foliate's paginator container scrolls horizontally. 
+                // ev.clientX is absolute to the full expanded iframe.
+                // We subtract the current scroll offset (renderer.start) to find where the click
+                // landed on the physical screen. 
+                if (renderer && typeof renderer.start === 'number' && typeof renderer.size === 'number') {
+                    visibleX = ev.clientX - renderer.start;
+                    viewportWidth = renderer.size;
+                } else {
+                    // Fallback for simple contexts
+                    visibleX = ev.clientX % viewportWidth;
+                }
+
+                const relX = visibleX / viewportWidth;
                 const flow = settingsRef.current?.flow;
 
                 if (flow === 'paginated') {

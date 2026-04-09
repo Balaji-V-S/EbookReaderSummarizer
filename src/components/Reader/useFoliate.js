@@ -222,10 +222,15 @@ export const useFoliate = ({
                 }
 
                 // Paginated tap navigation — left 30% goes back, right 30% goes forward.
-                // Centre 40% toggles controls. This mirrors the foliate reference reader approach
-                // and is the only way to navigate without blocking text selection.
+                // IMPORTANT: In foliate, the iframe renders all chapters as a single long 
+                // horizontally scattered series of columns. ev.clientX gives the absolute X 
+                // coordinate within the *entire* iframe (e.g. 5200px), not the visible screen.
+                // However, since the container scrolls perfectly by increments of rect.width,
+                // we can just use modulo to get the exact X position on the visible screen.
                 const rect = view.getBoundingClientRect();
-                const relX = (ev.clientX - rect.left) / rect.width;
+                const screenX = ev.clientX % rect.width;
+                const relX = screenX / rect.width;
+                
                 const flow = settingsRef.current?.flow;
 
                 if (flow === 'paginated') {
@@ -239,7 +244,8 @@ export const useFoliate = ({
                     }
                 }
 
-                // Centre tap — toggle UI controls
+                // Centre tap (or any tap in scroll mode) — toggle UI controls
+
                 setShowControls(prev => {
                     if (prev) {
                         setShowAppearance(false);

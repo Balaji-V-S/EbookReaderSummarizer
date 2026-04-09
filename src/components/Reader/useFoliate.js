@@ -206,12 +206,12 @@ export const useFoliate = ({
                 // Left 20% = Prev Page | Right 20% = Next Page | Middle 60% = Toggle Controls
                 if (settingsRef.current?.flow === 'paginated') {
                     const x = ev.clientX;
-                    const width = doc.documentElement.clientWidth;
-                    if (x < width * 0.2) {
+                    const screenWidth = window.innerWidth;
+                    if (x < screenWidth * 0.2) {
                         view.prev();
                         return;
                     }
-                    if (x > width * 0.8) {
+                    if (x > screenWidth * 0.8) {
                         view.next();
                         return;
                     }

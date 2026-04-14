@@ -137,7 +137,24 @@ const Reader = ({ book, onBack }) => {
                     style={{ outline: 'none' }}
                 />
 
-                {/* Nav overlays removed: useFoliate handles edge-navigation natively via iframe clicks */}
+                {flow === 'paginated' && (
+                    <div className="absolute inset-0 z-10 pointer-events-none">
+                        <div
+                            className="absolute inset-y-0 left-0 w-20 pointer-events-auto cursor-pointer flex items-center justify-start pl-4 nav-overlay"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handlePrev();
+                            }}
+                        />
+                        <div
+                            className="absolute inset-y-0 right-0 w-20 pointer-events-auto cursor-pointer flex items-center justify-end pr-4 nav-overlay"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleNext();
+                            }}
+                        />
+                    </div>
+                )}
             </div>
 
             <TocSidebar

@@ -23,9 +23,6 @@ export const useReader = ({ book, onBack }) => {
 
     // UI visibility toggles
     const [showControls, setShowControls] = useState(true);
-    const showControlsRef = useRef(showControls);
-    useEffect(() => { showControlsRef.current = showControls; }, [showControls]);
-
     const [showSettings, setShowSettings] = useState(false);
     const [showAppearance, setShowAppearance] = useState(false);
     const [showToc, setShowToc] = useState(false);
@@ -62,7 +59,6 @@ export const useReader = ({ book, onBack }) => {
         setIsReady,
         setLoadError,
         setSelection: explain.setSelection,
-        showControlsRef,
         setShowControls,
         setShowAppearance,
         setShowToc,

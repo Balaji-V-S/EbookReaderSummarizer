@@ -26,6 +26,18 @@ const buildReaderCSS = (s) => {
         body, p, div, span, h1, h2, h3, h4, h5, h6,
         li, blockquote, td, th, caption, pre, code, a {
             font-size: ${s.fontSize}% !important;
+            -webkit-user-select: text !important;
+            user-select: text !important;
+            -webkit-touch-callout: default !important;
+        }
+        html, body {
+            -webkit-user-select: text !important;
+            user-select: text !important;
+            -webkit-touch-callout: default !important;
+        }
+        img, svg, video, audio {
+            -webkit-user-select: none !important;
+            user-select: none !important;
         }
         p, li, blockquote, td, th {
             color: ${t.color} !important;
@@ -196,10 +208,103 @@ export const useFoliate = ({
                 }
             } catch (err) { console.warn('Could not load highlights', err); }
 
+            let touchStart = null;
+            let lastTouchMoveAt = 0;
+            let lastTouchEndAt = 0;
+            let lastSelectionAt = 0;
+            let lastSelectionClearAt = 0;
+            let lastHandledTouchTapAt = 0;
+            let lastTouchMoved = false;
+            let hadActiveSelection = false;
+            const tapMoveTolerance = 10;
+            const gestureSettleMs = 350;
+            const selectionSettleMs = 700;
+            const longPressMs = 450;
+
+            const getSelectedText = () => doc.getSelection()?.toString().trim() || '';
+
+            const getTapTarget = (target) => {
+                if (!target) return null;
+                return typeof target.closest === 'function' ? target : target.parentElement;
+            };
+
+            const handleReaderTap = () => {
+                if (isFocusModeRef.current) {
+                    setShowFocusExit(prev => !prev);
+                    return;
+                }
+
+                setShowAppearance(false);
+                setShowToc(false);
+                setShowSettings(false);
+                setShowNotes(false);
+                setShowControls(prev => !prev);
+            };
+
+            const shouldHandleReaderTap = (ev, now = Date.now()) => {
+                const target = getTapTarget(ev.target);
+                const tag = target?.tagName?.toLowerCase?.();
+
+                if (ev.defaultPrevented) return false;
+                if (getSelectedText().length > 0) return false;
+                if (now - lastSelectionAt < selectionSettleMs) return false;
+                if (now - lastSelectionClearAt < gestureSettleMs) return false;
+                if (lastTouchMoved && now - lastTouchEndAt < gestureSettleMs) return false;
+                if (now - lastTouchMoveAt < gestureSettleMs) return false;
+                if (target?.closest?.('a[href], button, input, textarea, select, [role="button"]')) return false;
+                if (['img', 'svg', 'video', 'audio'].includes(tag)) return false;
+
+                return true;
+            };
+
+            const handleTouchStart = (ev) => {
+                const touch = ev.changedTouches?.[0];
+                if (!touch) return;
+                lastTouchMoved = false;
+                touchStart = {
+                    x: touch.clientX,
+                    y: touch.clientY,
+                    t: Date.now(),
+                };
+            };
+
+            const handleTouchMove = (ev) => {
+                const touch = ev.changedTouches?.[0];
+                if (!touch || !touchStart) return;
+                const dx = Math.abs(touch.clientX - touchStart.x);
+                const dy = Math.abs(touch.clientY - touchStart.y);
+                if (dx > tapMoveTolerance || dy > tapMoveTolerance) {
+                    lastTouchMoved = true;
+                    lastTouchMoveAt = Date.now();
+                }
+            };
+
+            const handleTouchEnd = (ev) => {
+                const endedAt = Date.now();
+                const wasLongPress = touchStart && endedAt - touchStart.t > longPressMs;
+                lastTouchEndAt = endedAt;
+
+                if (lastTouchMoved || wasLongPress) return;
+
+                setTimeout(() => {
+                    const now = Date.now();
+                    if (now - lastHandledTouchTapAt < 500) return;
+                    if (!shouldHandleReaderTap(ev, now)) return;
+                    lastHandledTouchTapAt = now;
+                    handleReaderTap();
+                }, 60);
+            };
+
+            doc.addEventListener('touchstart', handleTouchStart, { passive: true });
+            doc.addEventListener('touchmove', handleTouchMove, { passive: true });
+            doc.addEventListener('touchend', handleTouchEnd, { passive: true });
+
             doc.addEventListener('selectionchange', () => {
                 const sel = doc.getSelection();
-                const word = sel.toString().trim();
+                const word = sel?.toString().trim() || '';
                 if (word) {
+                    hadActiveSelection = true;
+                    lastSelectionAt = Date.now();
                     try {
                         const range = sel.getRangeAt(0);
                         setSelection({ word, cfiRange: view.getCFI(index, range) });
@@ -207,29 +312,18 @@ export const useFoliate = ({
                         setSelection({ word, cfiRange: null });
                     }
                 } else {
+                    if (hadActiveSelection) lastSelectionClearAt = Date.now();
+                    hadActiveSelection = false;
                     setSelection(null);
                 }
             });
 
             doc.addEventListener('click', (ev) => {
-                const sel = doc.getSelection();
-                if (sel?.toString().trim().length > 0) return;
-                if (ev.target.closest('a') || ev.target.tagName.toLowerCase() === 'img') return;
-
-                if (isFocusModeRef.current) {
-                    setShowFocusExit(prev => !prev);
-                    return;
-                }
-
-                setShowControls(prev => {
-                    if (prev) {
-                        setShowAppearance(false);
-                        setShowToc(false);
-                        setShowSettings(false);
-                        setShowNotes(false);
-                    }
-                    return !prev;
-                });
+                const now = Date.now();
+                if (now - lastHandledTouchTapAt < 500) return;
+                if (!shouldHandleReaderTap(ev, now)) return;
+                lastHandledTouchTapAt = now;
+                handleReaderTap();
             });
         };
 

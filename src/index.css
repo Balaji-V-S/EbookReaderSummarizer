@@ -52,10 +52,8 @@ foliate-view::part(container)::-webkit-scrollbar {
 /* iOS PWA Fixes */
 .ios-pwa-reader {
   touch-action: manipulation;
-  /* Allow pinch-to-zoom but handle taps faster */
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
+  /* Keep taps responsive without blocking native text selection in the reader iframe. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Ensure overlays are clickable */

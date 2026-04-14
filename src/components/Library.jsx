@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import ePub from 'epubjs';
 import { saveBook, getBooks, deleteBook } from '../utils/storage';
 import { getStreakData } from '../utils/streaks';
-import { Book, Plus, Trash2, BookPlus, Flame, BarChart2, Settings, Key, X, BookMarked, Brain } from 'lucide-react';
+import { Book, Plus, Trash2, BookPlus, Flame, BarChart2, Settings, Key, X, BookMarked, Brain, Edit2, Search, Compass, Check } from 'lucide-react';
 import AddPhysicalBook from './AddPhysicalBook';
 import SettingsModal from './SettingsModal';
 import ProductTour from './ProductTour';
+import DiscoverModal from './DiscoverModal';
+import AddOptionsFab from './AddOptionsFab';
 
 const Library = ({ onOpenBook, onOpenDashboard, onOpenCommonplace, onOpenKnowledgeBase }) => {
 
@@ -14,6 +16,9 @@ const Library = ({ onOpenBook, onOpenDashboard, onOpenCommonplace, onOpenKnowled
     const [isUploading, setIsUploading] = useState(false);
     const [showAddPhysical, setShowAddPhysical] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [showDiscover, setShowDiscover] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const [streakData, setStreakData] = useState({ currentStreak: 0, maxStreak: 0, readToday: false });
     const [hasApiKey, setHasApiKey] = useState(() => !!localStorage.getItem('gemini_api_key'));
     const [dismissedBanner, setDismissedBanner] = useState(() => !!localStorage.getItem('api_banner_dismissed'));
@@ -22,6 +27,11 @@ const Library = ({ onOpenBook, onOpenDashboard, onOpenCommonplace, onOpenKnowled
     // Track which card has delete revealed (touch-friendly long-press or tap-icon)
     const [revealedDeleteId, setRevealedDeleteId] = useState(null);
     const longPressTimer = useRef(null);
+
+    const filteredBooks = books.filter(book => 
+        book.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        book.author.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     useEffect(() => {
         loadBooks();
@@ -121,6 +131,7 @@ const Library = ({ onOpenBook, onOpenDashboard, onOpenCommonplace, onOpenKnowled
 
     // Dismiss delete button when tapping elsewhere
     const handleCardClick = (book) => {
+        if (isEditMode) return;
         if (revealedDeleteId === book.id) {
             setRevealedDeleteId(null);
             return;
@@ -174,14 +185,22 @@ const Library = ({ onOpenBook, onOpenDashboard, onOpenCommonplace, onOpenKnowled
 
                 <div className="flex items-center gap-3 sm:ml-auto">
                     <button
+                        onClick={() => setShowDiscover(true)}
+                        className="hidden sm:flex items-center gap-2 px-3 py-2 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shadow-sm text-sm font-medium border border-indigo-200 dark:border-indigo-800"
+                        title="Discover Free Books"
+                    >
+                        <Compass className="w-[18px] h-[18px]" />
+                        <span className="hidden sm:inline">Discover</span>
+                    </button>
+                    <button
                         id="physical-btn"
                         onClick={() => setShowAddPhysical(true)}
-                        className="flex items-center gap-2 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-medium"
+                        className="hidden sm:flex items-center gap-2 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm text-sm font-medium"
                     >
                         <BookPlus size={18} />
                         <span>Physical</span>
                     </button>
-                    <label id="upload-btn" className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors shadow-sm text-sm font-medium">
+                    <label id="upload-btn" className="hidden sm:flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors shadow-sm text-sm font-medium">
                         <Plus size={18} />
                         <span>Upload</span>
                         <input
@@ -208,6 +227,32 @@ const Library = ({ onOpenBook, onOpenDashboard, onOpenCommonplace, onOpenKnowled
 
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto px-4 md:px-10 py-6">
+
+                {/* Toolbar */}
+                <div className="flex items-center justify-between mb-6 gap-4">
+                    <div className="relative w-full max-w-md">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input 
+                            type="text" 
+                            placeholder="Search library..." 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm"
+                        />
+                    </div>
+                    <div className="flex-shrink-0">
+                         <button 
+                            onClick={() => setIsEditMode(!isEditMode)}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors border shadow-sm ${
+                                isEditMode 
+                                ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300' 
+                                : 'bg-white border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            }`}
+                         >
+                             {isEditMode ? <><Check size={16} /> <span className="hidden sm:inline">Done</span></> : <><Edit2 size={16} /> <span className="hidden sm:inline">Edit</span></>}
+                         </button>
+                    </div>
+                </div>
 
                 {/* First-launch API key banner */}
                 {!hasApiKey && !dismissedBanner && (
@@ -242,12 +287,12 @@ const Library = ({ onOpenBook, onOpenDashboard, onOpenCommonplace, onOpenKnowled
                 )}
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {books.map((book) => (
+                    {filteredBooks.map((book) => (
                         <div
                             key={book.id}
-                            className="group relative bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-gray-100 dark:border-gray-700"
+                            className={`group relative bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-gray-100 dark:border-gray-700 ${isEditMode ? 'animate-wiggle' : ''}`}
                             onClick={() => handleCardClick(book)}
-                            onPointerDown={() => handleLongPressStart(book.id)}
+                            onPointerDown={() => !isEditMode && handleLongPressStart(book.id)}
                             onPointerUp={handleLongPressEnd}
                             onPointerLeave={handleLongPressEnd}
                         >
@@ -269,19 +314,21 @@ const Library = ({ onOpenBook, onOpenDashboard, onOpenCommonplace, onOpenKnowled
                                         <span className="text-xs">{book.title}</span>
                                     </div>
                                 )}
-                                {/* Delete button — always visible via long-press reveal, or hover on desktop */}
-                                <button
-                                    onClick={(e) => handleDelete(e, book.id)}
-                                    className={`absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full shadow-md transition-all duration-200 hover:bg-red-700 active:scale-90 ${revealedDeleteId === book.id ? 'opacity-100 scale-100' : 'opacity-0 group-hover:opacity-100'
-                                        }`}
-                                    title="Remove book"
-                                >
-                                    <Trash2 size={14} />
-                                </button>
-                                {/* Long-press hint badge — shown while delete is revealed */}
-                                {revealedDeleteId === book.id && (
-                                    <div className="absolute bottom-0 inset-x-0 bg-red-600/90 text-white text-xs text-center py-1 font-medium">
-                                        Tap 🗑 to remove
+                                {/* Delete button */}
+                                {(isEditMode || revealedDeleteId === book.id) && (
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity z-10">
+                                        <button
+                                            onClick={(e) => handleDelete(e, book.id)}
+                                            className="p-3 bg-red-600 text-white rounded-full shadow-xl transition-transform hover:scale-110 active:scale-95"
+                                            title="Remove book"
+                                        >
+                                            <Trash2 size={24} />
+                                        </button>
+                                        {!isEditMode && (
+                                            <div className="absolute bottom-2 text-white text-xs font-medium bg-red-600/90 px-2 py-1 rounded">
+                                                Tap 🗑 to remove
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -293,19 +340,69 @@ const Library = ({ onOpenBook, onOpenDashboard, onOpenCommonplace, onOpenKnowled
                                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                                     {book.author}
                                 </p>
-                                {book.cfi && (
+                                {book.type === 'physical' && book.totalPages ? (
+                                    <div className="mt-2 text-xs text-emerald-600 font-medium">
+                                        {Math.round((book.currentPage / book.totalPages) * 100) || 0}% Complete
+                                    </div>
+                                ) : book.progress !== undefined ? (
+                                    <div className="mt-2 text-xs text-blue-600 font-medium">
+                                        {Math.round(book.progress * 100)}% Complete
+                                    </div>
+                                ) : book.cfi ? (
                                     <div className="mt-2 text-xs text-blue-600 font-medium">
                                         In Progress
                                     </div>
-                                )}
+                                ) : null}
                             </div>
                         </div>
                     ))}
 
-                    {books.length === 0 && !isUploading && (
-                        <div className="col-span-full text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-                            <Book size={48} className="mx-auto text-gray-300 mb-4" />
-                            <p className="text-gray-500">No books yet. Add a physical book or upload an EPUB to get started!</p>
+                    {filteredBooks.length === 0 && !isUploading && (
+                        <div className="col-span-full pt-10 pb-20 max-w-2xl mx-auto w-full">
+                            <div className="text-center mb-8">
+                                <Book size={48} className="mx-auto text-blue-500 mb-4" />
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Your library is empty</h2>
+                                <p className="text-gray-500 dark:text-gray-400">Let's populate it. Choose an option to get started!</p>
+                            </div>
+                            
+                            <div className="grid gap-4 sm:grid-cols-3 sm:gap-6">
+                                <button
+                                    onClick={() => setShowDiscover(true)}
+                                    className="flex flex-col items-center p-6 bg-white dark:bg-gray-800 rounded-2xl border-2 border-indigo-100 dark:border-indigo-900/50 hover:border-indigo-500 hover:shadow-lg transition-all text-center group"
+                                >
+                                    <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <Compass size={32} />
+                                    </div>
+                                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Discover Classics</h3>
+                                    <p className="text-xs text-gray-500">Download free public domain books exactly like Pride and Prejudice.</p>
+                                </button>
+
+                                <label className="flex flex-col items-center p-6 bg-white dark:bg-gray-800 rounded-2xl border-2 border-blue-100 dark:border-blue-900/50 hover:border-blue-500 hover:shadow-lg transition-all text-center cursor-pointer group">
+                                    <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <Plus size={32} />
+                                    </div>
+                                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Upload File</h3>
+                                    <p className="text-xs text-gray-500">Import your own .epub or .pdf files to establish your collection.</p>
+                                    <input
+                                        type="file"
+                                        accept=".epub,.pdf"
+                                        onChange={handleFileUpload}
+                                        className="hidden"
+                                        disabled={isUploading}
+                                    />
+                                </label>
+
+                                <button
+                                    onClick={() => setShowAddPhysical(true)}
+                                    className="flex flex-col items-center p-6 bg-white dark:bg-gray-800 rounded-2xl border-2 border-emerald-100 dark:border-emerald-900/50 hover:border-emerald-500 hover:shadow-lg transition-all text-center group"
+                                >
+                                    <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <BookPlus size={32} />
+                                    </div>
+                                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Add Physical</h3>
+                                    <p className="text-xs text-gray-500">Manually log progress for a paper-backed physical book.</p>
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -337,6 +434,22 @@ const Library = ({ onOpenBook, onOpenDashboard, onOpenCommonplace, onOpenKnowled
                     localStorage.setItem('has_seen_interactive_tour', 'true');
                     setShowTour(false);
                 }}
+            />
+
+            <DiscoverModal 
+                isOpen={showDiscover} 
+                onClose={() => setShowDiscover(false)} 
+                onBookAdded={() => {
+                    loadBooks();
+                }} 
+            />
+
+            <AddOptionsFab 
+                onUpload={handleFileUpload}
+                onPhysical={() => setShowAddPhysical(true)}
+                onDiscover={() => setShowDiscover(true)}
+                disabled={isUploading}
+                isHidden={showDiscover || showAddPhysical || showSettings}
             />
         </>
     );

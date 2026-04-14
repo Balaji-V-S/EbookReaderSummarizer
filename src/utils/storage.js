@@ -40,11 +40,12 @@ export const getBook = async (id) => {
   return db.get(STORE_NAME, id);
 };
 
-export const updateProgress = async (id, cfi) => {
+export const updateProgress = async (id, cfi, percentage) => {
   const db = await initDB();
   const book = await db.get(STORE_NAME, id);
   if (book) {
     book.cfi = cfi;
+    if (percentage !== undefined) book.progress = percentage;
     book.lastRead = Date.now();
     await db.put(STORE_NAME, book);
     recordReadingDay(); // <---- Record Streak

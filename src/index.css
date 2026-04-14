@@ -60,3 +60,15 @@ foliate-view::part(container)::-webkit-scrollbar {
 .nav-overlay {
   -webkit-tap-highlight-color: transparent;
 }
+
+@keyframes wiggle {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-1deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(1deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-wiggle {
+  animation: wiggle 0.3s ease-in-out infinite;
+}

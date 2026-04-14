@@ -8,7 +8,7 @@ const defaults = {
   fontFamily: 'Inter, sans-serif',
   lineHeight: '1.8',
   maxWidth: '800px',
-  flow: 'paginated',
+  flow: 'scrolled',
 };
 
 export const useReaderSettings = () => {

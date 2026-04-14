@@ -176,7 +176,7 @@ export const useFoliate = ({
                 },
             });
 
-            if (detail.cfi) updateProgress(book.id, detail.cfi);
+            if (detail.cfi) updateProgress(book.id, detail.cfi, detail.fraction);
             if (detail.index !== undefined) recordPage(detail.index);
         };
 
@@ -258,6 +258,7 @@ export const useFoliate = ({
             };
 
             const handleTouchStart = (ev) => {
+                const root = doc.documentElement;
                 const touch = ev.changedTouches?.[0];
                 if (!touch) return;
                 lastTouchMoved = false;
@@ -265,6 +266,8 @@ export const useFoliate = ({
                     x: touch.clientX,
                     y: touch.clientY,
                     t: Date.now(),
+                    isBottom: Math.ceil(root.scrollTop + root.clientHeight) >= Math.floor(root.scrollHeight) - 2,
+                    isTop: root.scrollTop <= 2
                 };
             };
 
@@ -284,6 +287,26 @@ export const useFoliate = ({
                 const wasLongPress = touchStart && endedAt - touchStart.t > longPressMs;
                 lastTouchEndAt = endedAt;
 
+                // --- Overscroll Auto-Advance Injection (Mobile/Touch) ---
+                if (lastTouchMoved && touchStart) {
+                    const root = doc.documentElement;
+                    const isBottom = Math.ceil(root.scrollTop + root.clientHeight) >= Math.floor(root.scrollHeight) - 2;
+                    const isTop = root.scrollTop <= 2;
+                    
+                    const touch = ev.changedTouches?.[0];
+                    if (touch) {
+                        const dy = touchStart.y - touch.clientY; // Positive = swiping UP (scrolling down page)
+                        
+                        // Increase swipe threshold to 80px to demand a "hard pull"
+                        if (dy > 80 && isBottom && touchStart.isBottom) {
+                            view.next();
+                        } else if (dy < -80 && isTop && touchStart.isTop) {
+                            view.prev();
+                        }
+                    }
+                }
+                // ---------------------------------------------------------
+
                 if (lastTouchMoved || wasLongPress) return;
 
                 setTimeout(() => {
@@ -298,6 +321,67 @@ export const useFoliate = ({
             doc.addEventListener('touchstart', handleTouchStart, { passive: true });
             doc.addEventListener('touchmove', handleTouchMove, { passive: true });
             doc.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+            // --- Overscroll Auto-Advance Injection (Desktop/Wheel) ---
+            let arrivedAtBottomAt = 0;
+            let arrivedAtTopAt = 0;
+            let overscrollDownAmount = 0;
+            let overscrollUpAmount = 0;
+            let wheelDebounce = null;
+            
+            const MOMENTUM_IGNORE_MS = 600; // Ignore all wheel events for 600ms upon hitting the boundary
+            const HARD_PULL_THRESHOLD = 150; // The px of wheel scrolling needed to trigger page turn
+
+            doc.addEventListener('wheel', (ev) => {
+                const root = doc.documentElement;
+                const isBottom = Math.ceil(root.scrollTop + root.clientHeight) >= Math.floor(root.scrollHeight) - 2;
+                const isTop = root.scrollTop <= 2;
+
+                if (ev.deltaY > 0) { // Scrolling down
+                    overscrollUpAmount = 0;
+                    if (isBottom) {
+                        if (arrivedAtBottomAt === 0) arrivedAtBottomAt = Date.now();
+                        
+                        // Ignore residual momentum completely
+                        if (Date.now() - arrivedAtBottomAt > MOMENTUM_IGNORE_MS) {
+                            overscrollDownAmount += ev.deltaY;
+                            if (overscrollDownAmount > HARD_PULL_THRESHOLD) {
+                                view.next();
+                                overscrollDownAmount = 0;
+                                arrivedAtBottomAt = 0;
+                            }
+                        }
+                    } else {
+                        arrivedAtBottomAt = 0;
+                        overscrollDownAmount = 0;
+                    }
+                } else if (ev.deltaY < 0) { // Scrolling up
+                    overscrollDownAmount = 0;
+                    if (isTop) {
+                        if (arrivedAtTopAt === 0) arrivedAtTopAt = Date.now();
+                        
+                        if (Date.now() - arrivedAtTopAt > MOMENTUM_IGNORE_MS) {
+                            overscrollUpAmount += Math.abs(ev.deltaY);
+                            if (overscrollUpAmount > HARD_PULL_THRESHOLD) {
+                                view.prev();
+                                overscrollUpAmount = 0;
+                                arrivedAtTopAt = 0;
+                            }
+                        }
+                    } else {
+                        arrivedAtTopAt = 0;
+                        overscrollUpAmount = 0;
+                    }
+                }
+
+                // If user stops scrolling for 200ms, reset the pull tension so they must do it in one continuous motion
+                clearTimeout(wheelDebounce);
+                wheelDebounce = setTimeout(() => {
+                    overscrollDownAmount = 0;
+                    overscrollUpAmount = 0;
+                }, 200);
+            }, { passive: true });
+            // ----------------------------------------------------------
 
             doc.addEventListener('selectionchange', () => {
                 const sel = doc.getSelection();

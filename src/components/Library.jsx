@@ -226,7 +226,7 @@ const Library = ({ onOpenBook, onOpenDashboard, onOpenCommonplace, onOpenKnowled
             </header>
 
             {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto px-4 md:px-10 py-6">
+            <div className="flex-1 overflow-y-auto px-4 md:px-10 py-6" style={{ WebkitOverflowScrolling: 'touch' }}>
 
                 {/* Toolbar */}
                 <div className="flex items-center justify-between mb-6 gap-4">
@@ -291,10 +291,12 @@ const Library = ({ onOpenBook, onOpenDashboard, onOpenCommonplace, onOpenKnowled
                         <div
                             key={book.id}
                             className={`group relative bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-gray-100 dark:border-gray-700 ${isEditMode ? 'animate-wiggle' : ''}`}
+                            style={{ touchAction: 'pan-y' }}
                             onClick={() => handleCardClick(book)}
                             onPointerDown={() => !isEditMode && handleLongPressStart(book.id)}
                             onPointerUp={handleLongPressEnd}
                             onPointerLeave={handleLongPressEnd}
+                            onPointerCancel={handleLongPressEnd}
                         >
                             <div className="aspect-[2/3] bg-gray-100 dark:bg-gray-700 relative overflow-hidden">
                                 {book.cover ? (

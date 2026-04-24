@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ePub from 'epubjs';
 import { updateProgress, saveEbookSession } from '../utils/storage';
-import { generateSummary } from '../utils/gemini';
+import { generateSummary, getAISettings } from '../utils/ai';
 import { useReaderSettings } from '../utils/useReaderSettings';
 import { ArrowLeft, Settings, Sparkles, ChevronLeft, ChevronRight, Type, AlignJustify, Scroll, X, List } from 'lucide-react';
 import SummaryModal from './SummaryModal';
@@ -172,8 +172,8 @@ const Reader = ({ book, onBack }) => {
     };
 
     const handleSummarize = async () => {
-        const apiKey = localStorage.getItem('gemini_api_key');
-        if (!apiKey) {
+        const aiSettings = getAISettings();
+        if (!aiSettings.apiKey) {
             setShowSettings(true);
             return;
         }
@@ -199,7 +199,6 @@ const Reader = ({ book, onBack }) => {
                 previousChapters = toc.slice(0, currentChapterIndex).map(item => item.label);
             }
 
-            // ✅ Extract tiny anchor text for Gemini API
             const anchors = await extractChapterAnchors(epubBook, chapterItem.href);
 
             const metadata = {
@@ -211,16 +210,16 @@ const Reader = ({ book, onBack }) => {
                 anchors,
             };
 
-            const summary = await generateSummary(metadata, apiKey);
+            const summary = await generateSummary(metadata);
             setSummaryText(summary);
         } catch (error) {
             console.error(error);
             if (error.message.includes('limit: 0')) {
-                setSummaryText(`**API Key Issue:** Your Gemini API Key has its free tier limit set to 0.\n\nThis usually means Google requires you to enable billing in your Google Cloud Console for this project. They won't charge you for our tiny requests, but they require a card on file to unlock the API. \n\n[Go to Google AI Studio to check your billing status](https://aistudio.google.com/app/apikey)`);
+                setSummaryText('**API Key Issue:** Your AI API key may be invalid or restricted. Please verify your AI provider settings.');
             } else if (error.message.includes('Too many requests')) {
                 setSummaryText(`🚦 **Slow down:** ${error.message}`);
             } else {
-                setSummaryText(`Error: ${error.message}. Please check your API Key in settings.`);
+                setSummaryText(`Error: ${error.message}. Please check your AI settings.`);
             }
         } finally {
             setSummaryLoading(false);

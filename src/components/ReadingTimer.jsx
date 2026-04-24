@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Play, Square, ArrowLeft, Save, Clock, BookOpen, List, X, Sparkles, Settings } from 'lucide-react';
 import { updatePhysicalProgress } from '../utils/storage';
 import { motion, AnimatePresence } from 'framer-motion';
-import { generateSummary } from '../utils/gemini';
+import { generateSummary, getAISettings } from '../utils/ai';
 import SummaryModal from './SummaryModal';
 import SettingsModal from './SettingsModal';
 
@@ -73,8 +73,8 @@ const ReadingTimer = ({ book, onBack }) => {
         : 0;
 
     const handleSummarizeClick = () => {
-        const apiKey = localStorage.getItem('gemini_api_key');
-        if (!apiKey) {
+        const aiSettings = getAISettings();
+        if (!aiSettings.apiKey) {
             setShowSettings(true);
             return;
         }
@@ -99,14 +99,14 @@ const ReadingTimer = ({ book, onBack }) => {
                 anchors: null,
             };
 
-            const summary = await generateSummary(metadata, localStorage.getItem('gemini_api_key'));
+            const summary = await generateSummary(metadata);
             setSummaryText(summary);
         } catch (error) {
             console.error(error);
             if (error.message.includes('limit: 0')) {
-                setSummaryText(`**API Key Issue:** Your Gemini API Key has its free tier limit set to 0.\n\n[Go to Google AI Studio to check your billing status](https://aistudio.google.com/app/apikey)`);
+                setSummaryText('**API Key Issue:** Your AI API key may be invalid or restricted. Please verify your AI provider settings.');
             } else {
-                setSummaryText(`Error: ${error.message}. Please check your API Key in settings.`);
+                setSummaryText(`Error: ${error.message}. Please check your AI settings.`);
             }
         } finally {
             setSummaryLoading(false);

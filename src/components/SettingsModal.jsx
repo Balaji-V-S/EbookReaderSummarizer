@@ -1,46 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { X, Key, Save, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getAISettings, saveAISettings } from '../utils/ai';
-
-const OPENROUTER_MODELS = [
-  'gpt-4o-mini',
-  'gpt-3.5-mini',
-  'mistral-7b',
-];
-
-const GEMINI_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-1.0',
-];
+import { getAISettings, saveAISettings, PROVIDERS } from '../utils/ai';
 
 const SettingsModal = ({ isOpen, onClose }) => {
     const [apiKey, setApiKey] = useState('');
     const [provider, setProvider] = useState('openrouter');
-    const [model, setModel] = useState('gpt-4o-mini');
+    const [model, setModel] = useState('');
+    const [ollamaBaseUrl, setOllamaBaseUrl] = useState('http://localhost:11434');
     const [saved, setSaved] = useState(false);
 
     useEffect(() => {
         const settings = getAISettings();
         setApiKey(settings.apiKey || '');
         setProvider(settings.provider || 'openrouter');
-        setModel(settings.model || (settings.provider === 'gemini' ? 'gemini-2.5-flash' : 'gpt-4o-mini'));
+        setOllamaBaseUrl(settings.ollamaBaseUrl || 'http://localhost:11434');
+
+        const config = PROVIDERS.find((p) => p.id === (settings.provider || 'openrouter'));
+        const defaultModel = config?.models?.[0] ?? '';
+        setModel(settings.model || defaultModel);
     }, [isOpen]);
 
+    const handleProviderChange = (newProvider) => {
+        setProvider(newProvider);
+        const config = PROVIDERS.find((p) => p.id === newProvider);
+        setModel(config?.models?.[0] ?? '');
+    };
+
     const handleSave = () => {
-        saveAISettings({ apiKey, provider, model });
+        saveAISettings({ provider, model, apiKey, ollamaBaseUrl });
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
     };
 
     if (!isOpen) return null;
 
-    const modelOptions = provider === 'openrouter' ? OPENROUTER_MODELS : GEMINI_MODELS;
-    const apiLabel = provider === 'openrouter' ? 'OpenRouter API Key' : 'Google Gemini API Key';
-    const apiHelpLink = provider === 'openrouter' ? 'https://openrouter.ai' : 'https://aistudio.google.com/app/apikey';
-    const apiHelpText = provider === 'openrouter'
-        ? 'Get your key from OpenRouter.'
-        : 'Get one from Google AI Studio.';
+    const providerConfig = PROVIDERS.find((p) => p.id === provider);
+    const modelOptions = providerConfig?.models ?? [];
 
     return (
         <AnimatePresence>
@@ -61,7 +57,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                         </button>
                     </div>
 
-                    <div className="p-6 space-y-5">
+                    <div className="p-6 space-y-5 overflow-y-auto">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                                 <Layers size={16} />
@@ -69,59 +65,103 @@ const SettingsModal = ({ isOpen, onClose }) => {
                             </label>
                             <select
                                 value={provider}
-                                onChange={(e) => setProvider(e.target.value)}
+                                onChange={(e) => handleProviderChange(e.target.value)}
                                 className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                             >
-                                <option value="openrouter">OpenRouter</option>
-                                <option value="gemini">Google Gemini</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Model</label>
-                            <select
-                                value={model}
-                                onChange={(e) => setModel(e.target.value)}
-                                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                            >
-                                {modelOptions.map((option) => (
-                                    <option key={option} value={option}>{option}</option>
+                                {PROVIDERS.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                        {p.label}
+                                    </option>
                                 ))}
                             </select>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                                <Key size={16} />
-                                {apiLabel}
-                            </label>
-                            <input
-                                type="password"
-                                value={apiKey}
-                                onChange={(e) => setApiKey(e.target.value)}
-                                placeholder="Enter your API key"
-                                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                            />
-                            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                {apiHelpText} <a href={apiHelpLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Learn more</a>
-                            </p>
-                        </div>
+                        {provider !== 'ollama' ? (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Model</label>
+                                <select
+                                    value={model}
+                                    onChange={(e) => setModel(e.target.value)}
+                                    className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                >
+                                    {modelOptions.map((option) => (
+                                        <option key={option} value={option}>
+                                            {option}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        ) : (
+                            <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                                <p className="text-sm text-blue-900 dark:text-blue-200">
+                                    <strong>Model:</strong> Uses whatever model is currently running on your Ollama instance. Run <code className="bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded text-xs">ollama serve model-name</code> to change it.
+                                </p>
+                                <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+                                    Available models: llama3.2, llama3.1, mistral, gemma3, phi4, and more
+                                </p>
+                            </div>
+                        )}
+
+                        {providerConfig?.requiresApiKey && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                    <Key size={16} />
+                                    {providerConfig.apiKeyLabel}
+                                </label>
+                                <input
+                                    type="password"
+                                    value={apiKey}
+                                    onChange={(e) => setApiKey(e.target.value)}
+                                    placeholder="Enter your API key"
+                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                    {providerConfig.apiKeyHelp}{' '}
+                                    <a
+                                        href={providerConfig.apiKeyHelpUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                    >
+                                        Learn more
+                                    </a>
+                                </p>
+                            </div>
+                        )}
+
+                        {providerConfig?.requiresBaseUrl && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Ollama Base URL
+                                </label>
+                                <input
+                                    type="text"
+                                    value={ollamaBaseUrl}
+                                    onChange={(e) => setOllamaBaseUrl(e.target.value)}
+                                    placeholder="http://localhost:11434"
+                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                    {providerConfig.apiKeyHelp}{' '}
+                                    <a
+                                        href={providerConfig.apiKeyHelpUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                    >
+                                        Learn more
+                                    </a>
+                                </p>
+                            </div>
+                        )}
 
                         <button
                             onClick={handleSave}
-                            className={`w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all ${saved
-                                ? 'bg-green-600 text-white'
-                                : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                }`}
+                            className={`w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all ${
+                                saved ? 'bg-green-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
+                            }`}
                         >
-                            {saved ? (
-                                <>Saved!</>
-                            ) : (
-                                <>
-                                    <Save size={18} />
-                                    Save Settings
-                                </>
-                            )}
+                            {saved ? <>Saved!</> : <><Save size={18} /> Save Settings</>}
                         </button>
                     </div>
                 </motion.div>

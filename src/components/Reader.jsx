@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ePub from 'epubjs';
 import { updateProgress, saveEbookSession } from '../utils/storage';
-import { generateSummary, getAISettings } from '../utils/ai';
+import { generateSummary, getAISettings, PROVIDERS } from '../utils/ai';
 import { useReaderSettings } from '../utils/useReaderSettings';
 import { ArrowLeft, Settings, Sparkles, ChevronLeft, ChevronRight, Type, AlignJustify, Scroll, X, List } from 'lucide-react';
 import SummaryModal from './SummaryModal';
@@ -173,7 +173,8 @@ const Reader = ({ book, onBack }) => {
 
     const handleSummarize = async () => {
         const aiSettings = getAISettings();
-        if (!aiSettings.apiKey) {
+        const providerConfig = PROVIDERS.find((p) => p.id === aiSettings.provider);
+        if (providerConfig?.requiresApiKey && !aiSettings.apiKey) {
             setShowSettings(true);
             return;
         }

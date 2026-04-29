@@ -6,7 +6,7 @@ Welcome to the **Dual Mode Book Tracker & Summarizer**, a visually stunning, mob
 
 ### 📖 Dual Reading Modes
 - **E-Book Mode:** Upload any `.epub` file directly to the app. An offline-first reader renders the book locally using `epubjs` with full pagination, custom theming, text-scaling, and a Table of Contents sidebar. Your reading progress, duration, and page turns are tracked entirely automatically.
-- **Physical Book Mode:** Log your physical library via ISBN search (fetching metadata from the Google Books API). Use the built-in stopwatch timer to track your reading sessions and manually log your new page number when you finish.
+- **Physical Book Mode:** Log your physical library via ISBN search (fetching metadata from Open Library API) or add books manually. Use the built-in stopwatch timer to track your reading sessions and manually log your new page number when you finish.
 
 ### ✨ AI Chapter Summarizations
 Powered by the **Google Gemini API**, you can instantly get a no-spoiler summary of the events leading up to your current reading position. 

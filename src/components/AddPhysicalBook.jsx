@@ -43,6 +43,8 @@ const AddPhysicalBook = ({ onClose, onBookAdded }) => {
             currentPage: 0,
             cover: coverBlob,
             coverUrl: coverUrl,
+            rating: bookInfo.ratings_average || null,
+            ratingCount: bookInfo.ratings_count || null,
             sessions: [],
             lastRead: Date.now(),
         };
@@ -71,6 +73,19 @@ const AddPhysicalBook = ({ onClose, onBookAdded }) => {
                 if (Object.keys(data).length > 0) {
                     const bookKey = Object.keys(data)[0];
                     const bookInfo = data[bookKey];
+
+                    // Fetch ratings from OpenLibrary ratings API
+                    if (bookInfo.key) {
+                        try {
+                            const ratingRes = await fetch(`https://openlibrary.org${bookInfo.key}/ratings.json`);
+                            const ratingData = await ratingRes.json();
+                            bookInfo.ratings_average = ratingData.summary?.average || null;
+                            bookInfo.ratings_count = ratingData.summary?.count || null;
+                        } catch (e) {
+                            console.warn('Could not fetch ratings for ISBN book');
+                        }
+                    }
+
                     await addBookToLibrary(bookInfo);
                 } else {
                     setError('Book not found. Try author search or manual entry.');
@@ -88,7 +103,7 @@ const AddPhysicalBook = ({ onClose, onBookAdded }) => {
                         'summary', 'summaries', 'guide', 'review', 'sparknotes', 'cliffsnotes',
                         'instaread', 'audiobook', 'audiobooks', 'analysis', 'study guide'
                     ];
-                    const results = data.docs
+                    let results = data.docs
                         .filter((doc) => {
                             const title = doc.title.toLowerCase();
                             const isSummaryOrGuide = filterKeywords.some((keyword) => title.includes(keyword));
@@ -103,10 +118,34 @@ const AddPhysicalBook = ({ onClose, onBookAdded }) => {
                             pages: doc.number_of_pages_median || 300,
                             cover: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : null,
                             key: doc.key,
+                            ratings_average: null,
+                            ratings_count: null,
                         }));
 
                     if (results.length > 0) {
                         setSearchResults(results);
+
+                        // Fetch ratings for each book in background
+                        results.forEach((book) => {
+                            fetch(`https://openlibrary.org${book.key}/ratings.json`)
+                                .then((res) => res.json())
+                                .then((data) => {
+                                    setSearchResults((prev) =>
+                                        prev.map((b) =>
+                                            b.key === book.key
+                                                ? {
+                                                    ...b,
+                                                    ratings_average: data.summary?.average || null,
+                                                    ratings_count: data.summary?.count || null,
+                                                  }
+                                                : b
+                                        )
+                                    );
+                                })
+                                .catch(() => {
+                                    // Silently fail - ratings are optional
+                                });
+                        });
                     } else {
                         setError('No actual books found. Try ISBN search or manual entry.');
                     }
@@ -253,7 +292,14 @@ const AddPhysicalBook = ({ onClose, onBookAdded }) => {
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-medium text-gray-900 dark:text-white truncate">{book.title}</p>
                                                     <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{book.author}</p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-500">{book.pages} pages</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-xs text-gray-500 dark:text-gray-500">{book.pages} pages</p>
+                                                        {book.ratings_average && (
+                                                            <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-100 px-2 py-0.5 rounded">
+                                                                ⭐ {book.ratings_average.toFixed(1)} ({book.ratings_count})
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <ChevronRight size={20} className="text-gray-400 flex-shrink-0 my-auto" />
                                             </button>
@@ -277,7 +323,20 @@ const AddPhysicalBook = ({ onClose, onBookAdded }) => {
                                                 {selectedBook.title}
                                             </h3>
                                             <p className="text-gray-600 dark:text-gray-400 mb-1">{selectedBook.author}</p>
-                                            <p className="text-sm text-gray-500 dark:text-gray-500">{selectedBook.pages} pages</p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-500 mb-2">{selectedBook.pages} pages</p>
+                                            {selectedBook.ratings_average && (
+                                                <div className="flex items-center justify-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg py-2 px-3">
+                                                    <span className="text-lg">⭐</span>
+                                                    <div className="text-left">
+                                                        <p className="font-semibold text-yellow-900 dark:text-yellow-100">
+                                                            {selectedBook.ratings_average.toFixed(1)}/5
+                                                        </p>
+                                                        <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                                                            {selectedBook.ratings_count} ratings
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Key, Save, Layers } from 'lucide-react';
+import { X, Key, Save, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAISettings, saveAISettings, PROVIDERS } from '../utils/ai';
 
@@ -30,7 +30,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
     const handleSave = () => {
         saveAISettings({ provider, model, apiKey, ollamaBaseUrl });
         setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+        setTimeout(() => { setSaved(false); onClose(); }, 1200);
     };
 
     if (!isOpen) return null;
@@ -45,10 +45,10 @@ const SettingsModal = ({ isOpen, onClose }) => {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-700 max-h-[90vh] flex flex-col m-4"
+                    className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-700 m-4"
                 >
-                    <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
-                        <h2 className="font-semibold text-lg text-gray-800 dark:text-white">Settings</h2>
+                    <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
+                        <h2 className="font-semibold text-lg text-gray-800 dark:text-white">AI Settings</h2>
                         <button
                             onClick={onClose}
                             className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-500"

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Square, ArrowLeft, Save, Clock, BookOpen, List, X, Sparkles, Settings } from 'lucide-react';
-import { updatePhysicalProgress } from '../utils/storage';
+import { Play, Square, ArrowLeft, Save, Clock, BookOpen, List, X, Sparkles, Settings, BookMarked } from 'lucide-react';
+import { updatePhysicalProgress, saveSummary } from '../utils/storage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateSummary, getAISettings } from '../utils/ai';
 import SummaryModal from './SummaryModal';
 import SettingsModal from './SettingsModal';
+import NotesModal from './NotesModal';
 
 const ReadingTimer = ({ book, onBack }) => {
     const [isRunning, setIsRunning] = useState(false);
@@ -12,10 +13,12 @@ const ReadingTimer = ({ book, onBack }) => {
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [newPage, setNewPage] = useState(book.currentPage || 0);
     const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState('');
 
     // Summarization States
     const [showSummary, setShowSummary] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [showNotes, setShowNotes] = useState(false);
     const [summaryLoading, setSummaryLoading] = useState(false);
     const [summaryText, setSummaryText] = useState('');
     const [showChapterPrompt, setShowChapterPrompt] = useState(false);
@@ -52,13 +55,13 @@ const ReadingTimer = ({ book, onBack }) => {
     };
 
     const handleSaveSession = async () => {
-        if (newPage <= book.currentPage) {
-            alert("New page must be greater than your previous page.");
+        if (!newPage || parseInt(newPage) <= (book.currentPage || 0)) {
+            setSaveError(`Please enter a page number greater than ${book.currentPage || 0}.`);
             return;
         }
-
+        setSaveError('');
         setSaving(true);
-        const pagesRead = newPage - book.currentPage;
+        const pagesRead = parseInt(newPage) - (book.currentPage || 0);
         const durationMs = timeInSeconds * 1000;
 
         await updatePhysicalProgress(book.id, pagesRead, durationMs, parseInt(newPage));
@@ -101,6 +104,7 @@ const ReadingTimer = ({ book, onBack }) => {
 
             const summary = await generateSummary(metadata);
             setSummaryText(summary);
+            await saveSummary(book.id, chapterInput.trim(), summary);
         } catch (error) {
             console.error(error);
             if (error.message.includes('limit: 0')) {
@@ -132,6 +136,14 @@ const ReadingTimer = ({ book, onBack }) => {
                     >
                         <Sparkles size={16} />
                         <span className="hidden sm:inline">Summarize</span>
+                    </button>
+
+                    <button
+                        onClick={() => setShowNotes(true)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors mr-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50`}
+                    >
+                        <BookMarked size={16} />
+                        <span className="hidden sm:inline">Notes</span>
                     </button>
 
                     <button onClick={() => setShowSettings(true)} className="p-2 hover:opacity-70 rounded-full transition-colors text-gray-600 dark:text-gray-300">
@@ -201,12 +213,21 @@ const ReadingTimer = ({ book, onBack }) => {
                             </label>
                             <input
                                 type="number"
-                                min={book.currentPage || 0}
+                                min={(book.currentPage || 0) + 1}
                                 max={book.totalPages || 9999}
                                 value={newPage}
-                                onChange={(e) => setNewPage(e.target.value)}
-                                className="w-full px-4 py-3 text-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white mb-6"
+                                onChange={(e) => {
+                                    setNewPage(e.target.value);
+                                    setSaveError('');
+                                }}
+                                className="w-full px-4 py-3 text-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white mb-2"
                             />
+                            {saveError && (
+                                <p className="text-sm text-red-500 dark:text-red-400 mb-4 flex items-center gap-1">
+                                    <span>⚠</span> {saveError}
+                                </p>
+                            )}
+                            {!saveError && <div className="mb-6" />}
 
                             <div className="flex gap-3">
                                 <button
@@ -217,7 +238,7 @@ const ReadingTimer = ({ book, onBack }) => {
                                 </button>
                                 <button
                                     onClick={handleSaveSession}
-                                    disabled={saving || newPage <= book.currentPage}
+                                    disabled={saving || !newPage || parseInt(newPage) <= (book.currentPage || 0)}
                                     className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 shadow-lg shadow-blue-600/30"
                                 >
                                     {saving ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <><Save size={18} /> Save</>}
@@ -283,6 +304,13 @@ const ReadingTimer = ({ book, onBack }) => {
             <SettingsModal
                 isOpen={showSettings}
                 onClose={() => setShowSettings(false)}
+            />
+
+            <NotesModal
+                isOpen={showNotes}
+                onClose={() => setShowNotes(false)}
+                bookId={book.id}
+                bookTitle={book.title}
             />
 
         </div>

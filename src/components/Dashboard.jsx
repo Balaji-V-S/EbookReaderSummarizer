@@ -64,7 +64,7 @@ const Dashboard = ({ onBack }) => {
 
     if (loading) {
         return (
-            <div className="flex-1 flex justify-center items-center h-full min-h-screen bg-gray-50 dark:bg-gray-900">
+            <div className="flex-1 flex justify-center items-center overflow-y-auto">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
             </div>
         );
@@ -73,7 +73,7 @@ const Dashboard = ({ onBack }) => {
     const { totalBooks, totalPages, totalDurationMs, streakData } = stats;
 
     return (
-        <div className="p-4 md:p-10 w-full max-w-7xl mx-auto flex-1 bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <div className="p-4 md:p-10 w-full max-w-7xl mx-auto flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
             <header className="flex items-center gap-2 sm:gap-4 mb-6 sm:mb-10">
                 <button
                     onClick={onBack}
@@ -84,7 +84,7 @@ const Dashboard = ({ onBack }) => {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">Reading Insights</h1>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-10">
                 {/* Streak Card */}
                 <motion.div
                     initial={{ y: 20, opacity: 0 }}
@@ -126,25 +126,7 @@ const Dashboard = ({ onBack }) => {
                     </div>
                 </motion.div>
 
-                {/* Pages Card */}
-                <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700"
-                >
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg">
-                            <BookOpen size={24} />
-                        </div>
-                    </div>
-                    <div>
-                        <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                            {totalPages}
-                        </div>
-                        <div className="text-gray-500 dark:text-gray-400 font-medium">Total Pages Read</div>
-                    </div>
-                </motion.div>
+
 
                 {/* Books Card */}
                 <motion.div
@@ -167,33 +149,7 @@ const Dashboard = ({ onBack }) => {
                 </motion.div>
             </div>
 
-            <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 text-center"
-            >
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b dark:border-gray-700 pb-4 mb-6">Reading Velocity</h3>
 
-                {totalDurationMs > 0 && totalPages > 0 ? (
-                    <div className="flex flex-col items-center justify-center py-6">
-                        <div className="text-5xl font-extrabold text-blue-600 dark:text-blue-400 mb-2">
-                            {Math.round(totalPages / (totalDurationMs / (1000 * 60)))}
-                        </div>
-                        <div className="text-gray-500 dark:text-gray-400 uppercase tracking-widest text-sm font-semibold">
-                            Average Pages per Minute
-                        </div>
-                        <p className="mt-4 max-w-sm text-sm text-gray-400 dark:text-gray-500">
-                            Based on your reading sessions, this is your average reading speed!
-                        </p>
-                    </div>
-                ) : (
-                    <div className="py-12 text-gray-400">
-                        <TrendingUp size={48} className="mx-auto mb-4 opacity-50" />
-                        <p>Complete a reading session to unlock speed metrics.</p>
-                    </div>
-                )}
-            </motion.div>
         </div>
     );
 };

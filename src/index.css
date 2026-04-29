@@ -1,15 +1,36 @@
 @import "tailwindcss";
 
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+  /* @capacitor-community/safe-area injects --safe-area-inset-* custom properties.
+     These work even on Android WebView < 140 where env() incorrectly returns 0px. */
+  --safe-pt: max(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)), 40px);
+  --safe-pb: max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)), 20px);
 }
 
 body {
   margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  /* Prevent the entire screen from being dragged/bounced on mobile browsers */
+  overflow: hidden;
+  overscroll-behavior: none;
   background-color: #f9fafb;
   /* light mode fallback */
 }
@@ -21,5 +42,38 @@ html.dark body {
 
 #root {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
+}
+
+foliate-view::part(container) {
+  scrollbar-width: none;
+}
+
+foliate-view::part(container)::-webkit-scrollbar {
+  display: none;
+}
+
+/* iOS PWA Fixes */
+.ios-pwa-reader {
+  touch-action: manipulation;
+  /* Keep taps responsive without blocking native text selection in the reader iframe. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure overlays are clickable */
+.nav-overlay {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes wiggle {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-1deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(1deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-wiggle {
+  animation: wiggle 0.3s ease-in-out infinite;
 }

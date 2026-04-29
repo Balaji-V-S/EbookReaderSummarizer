@@ -1,6 +1,6 @@
-# Dual Mode Book Tracker & Summarizer
+# Atheneum
 
-Welcome to the **Dual Mode Book Tracker & Summarizer**, a visually stunning, mobile-first React application that helps you track both your physical books and EPUB e-books in one unified dashboard, and generates AI-powered summaries of your progress using the Gemini API!
+Welcome to **Atheneum**, a visually stunning, mobile-first React application that helps you track both your physical books and EPUB e-books in one unified dashboard, and generates AI-powered summaries of your progress using the Gemini API!
 
 ## 🌟 Key Features
 

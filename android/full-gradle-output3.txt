@@ -1,0 +1,25 @@
+
+> Configure project :app
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+> Configure project :capacitor-cordova-android-plugins
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Could not determine the dependencies of task ':app:packageDebug'.
+> Could not create task ':app:compileDebugJavaWithJavac'.
+   > Using '--release' option for JavaCompile is not supported because it prevents the Android Gradle plugin
+     from setting up the bootclasspath for compiling Java source files against Android APIs
+     (see https://issuetracker.google.com/278800528).
+     Please use Java toolchain or set 'sourceCompatibility' and 'targetCompatibility' options instead.
+     (see https://developer.android.com/build/jdks#source-compat).
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2s
